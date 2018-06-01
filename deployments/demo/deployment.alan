@@ -1,0 +1,20 @@
+external systems
+
+instance data
+	'server'
+		from local migrate
+
+	'reporter'
+		from local
+
+system options
+	'server'
+		schedule every day every hour
+			at  0
+			at 30
+
+providing connections
+	'client' socket "127.0.0.1" : 7577
+
+enable persistent storage for
+	'server'

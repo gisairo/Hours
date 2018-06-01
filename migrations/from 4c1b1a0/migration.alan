@@ -1,0 +1,151 @@
+root {
+	'Users' : dictionary = . 'gebruikers' {
+		'Contracts' : dictionary = . 'contractperiodes' {
+			'Active' : stategroup = switch ( ? 'actief' ) (
+				| 'ja' = 'Yes' { }
+				| 'nee' = 'No' { }
+			)
+			'Time Per Week' : number = # 'contractduur per week' as 'minuten'
+		}
+		'Name' : text = . 'naam'
+		'Roles' ( + 'rollen' ) : group = {
+			'Manager' : stategroup = switch ( ? 'beheerder' ) (
+				| 'ja' = 'Yes' { }
+				| 'nee' = 'No' { }
+			)
+			'Project Manager' : stategroup = switch ( ? 'projectbeheerder' ) (
+				| 'ja' = 'Yes' { }
+				| 'nee' = 'No' { }
+			)
+			'Reviewer' : stategroup = switch ( ? 'reviewer' ) (
+				| 'ja' = 'Yes' { }
+				| 'nee' = 'No' { }
+			)
+			'Employee' : stategroup = switch ( ? 'werknemer' ) (
+				| 'ja' = 'Yes' { }
+				| 'nee' = 'No' { }
+			)
+		}
+		'Password' : text = . 'wachtwoord'
+	}
+	'Years' : dictionary = . 'jaren' {
+		'Users' : matrix = % 'gebruikers' {
+			'Subsidized' : stategroup = switch ( ? 'WBSO' ) (
+				| 'ja' = 'Yes' { }
+				| 'nee' = 'No' { }
+			)
+			'Furlough Budget' : number = # 'vrije tijd' as 'minuten'
+			'Weeks' : matrix = % 'weken' {
+				'Submitted' : stategroup = switch ( ? 'uren ingediend' ) (
+					| 'ja' = 'Yes' {
+						'Approved' : stategroup = switch ( ? 'goedgekeurd' ) (
+							| 'ja' = 'Yes' {
+								'Approver' : reference = > 'door'
+								'Timestamp' : number = # 'wanneer' as 'tijdstip'
+							}
+							| 'nee' = 'No' { }
+						)
+						'Fixed Contract' : stategroup = switch ( ? 'vaste aanstelling' ) (
+							| 'ja' = 'Yes' {
+								'Contract' : reference = > 'contractperiode'
+							}
+							| 'nee' = 'No' { }
+						)
+					}
+					| 'nee' = 'No' { }
+				)
+				'Days' : matrix = % 'weekdagen' {
+					'Registrations' : dictionary = . 'registraties' {
+						'Activity' : stategroup = switch ( ? 'activiteit' ) (
+							| 'feestdag' = 'Holiday' { }
+							| 'gewerkt aan project' = 'Worked On Project' {
+								'Project' : reference = > 'project'
+							}
+							| 'nog toe te wijzen' = 'TBD' { }
+							| 'vrij' = 'Furlough' { }
+							| 'ziek' = 'Sick Leave' { }
+						)
+						'Duration' : number = # 'duur' as 'minuten'
+						'Description' : text = . 'omschrijving'
+					}
+				}
+			}
+		}
+		'Closed' : stategroup = switch ( ? 'jaar afgesloten' ) (
+			| 'ja' = 'Yes' { }
+			| 'nee' = 'No' { }
+		)
+		'Projects' : dictionary = . 'projecten' {
+			'Subsidized' : stategroup = switch ( ? 'WBSO' ) (
+				| 'ja' = 'Yes' { }
+				| 'nee' = 'No' { }
+			)
+			'Active' : stategroup = switch ( ? 'actief' ) (
+				| 'ja' = 'Yes' { }
+				| 'nee' = 'No' { }
+			)
+			'Billable' : stategroup = switch ( ? 'declarabel' ) (
+				| 'ja' = 'Yes' {
+					'Budget' : number = # 'budget' as 'minuten'
+					'Section' : reference = > 'contractregel'
+					'Declarations' : dictionary = . 'declaraties' {
+						'Minutes' : number = # 'minuten' as 'minuten'
+					}
+				}
+				| 'nee' = 'No' { }
+			)
+			'Project Group' : reference = > 'projectgroep'
+		}
+		'Project Groups' : dictionary = . 'projectgroepen' {
+			'Comments' : text = . 'commentaar'
+			'Sections' : dictionary = . 'contractregels' {
+				'Expenses Budget' : number = # 'kostenbegroting' as 'euro'
+				'Rate' : number = # 'tarief' as 'euro per uur'
+				'Declaration Method' : stategroup = switch ( ? 'uren verrekeningsmethode' ) (
+					| 'declaratie' = 'Declaration' {
+						'Budget' : number = # 'budget in uren' as 'uren'
+					}
+					| 'fixed price' = 'Fixed Price' {
+						'Final Amount' : number = # 'bedrag bij oplevering' as 'euro'
+					}
+				)
+			}
+			'Owner' : reference = > 'eigenaar'
+		}
+		'Weeks' : dictionary = . 'weken' {
+			'Days' : dictionary = . 'weekdagen' {
+				'Date' : number = # 'datum' as 'datum'
+				'Is an Holiday' : stategroup = switch ( ? 'is een feestdag' ) (
+					| 'ja' = 'Yes' {
+						'Holiday' : text = . 'feestdag'
+					}
+					| 'nee' = 'No' { }
+				)
+				'Week Day' : stategroup = switch ( ? 'weekdag' ) (
+					| 'dinsdag' = 'Tuesday' { }
+					| 'donderdag' = 'Thursday' { }
+					| 'maandag' = 'Monday' { }
+					| 'vrijdag' = 'Friday' { }
+					| 'woensdag' = 'Wednesday' { }
+					| 'zaterdag' = 'Saturday' { }
+					| 'zondag' = 'Sunday' { }
+				)
+			}
+		}
+	}
+}
+numerical type conversion
+	'datum' -> 'Date'
+	'euro' -> '€'
+	'euro per uur' -> '€/hour'
+	'minuten' -> 'Minutes'
+	'tijdstip' -> 'Time'
+	'uren' -> 'Hours'
+numerical type mapping
+	'datum' -> 'datum'
+	'euro' -> 'euro'
+	'euro per uur' -> 'euro per uur'
+	'minuten' -> 'minuten'
+	'tijdstip' -> 'tijdstip'
+	'uren' -> 'uren'
+

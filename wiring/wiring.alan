@@ -1,0 +1,16 @@
+external systems
+
+systems
+	'server'
+		exposes model as 'hours'
+
+	'reporter'
+		consumes model as 'hours' from 'server'
+
+	'client'
+		consumes model as 'hours' from 'server'
+		forwards connection 'report-manage' to internal system 'reporter':'report-manage'
+		forwards connection 'report-download' to internal system 'reporter':'report-download'
+
+providing connections
+	'client' from internal system 'client' custom protocol 'http'

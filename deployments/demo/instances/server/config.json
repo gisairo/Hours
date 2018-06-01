@@ -1,0 +1,6 @@
+{
+  "DEBUG": true,
+  "policy": 15,
+  "poolsize": 0,
+  "firehose": false
+}

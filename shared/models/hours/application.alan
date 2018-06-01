@@ -1,0 +1,219 @@
+users
+	dynamic :  . 'Users'
+	password : . 'Password'
+
+roles
+	'Manager':         dynamic + 'Roles' ? 'Manager' | 'Yes'
+	'Project Manager': dynamic + 'Roles' ? 'Project Manager' | 'Yes'
+	'Employee':        dynamic + 'Roles' ? 'Employee' | 'Yes'
+
+root #writer 'Manager' #reader 'Employee' {
+	'Users': collection {
+		'Name': text @identifying
+		'Password' #writer 'Employee': text @validate: ".{8}" @description: "At least 8 characters"
+		'Roles': group {
+			'Manager': stategroup @default: 'No' (
+				'Yes' -> { }
+				'No' -> { }
+			)
+			'Project Manager': stategroup @default: 'No' (
+				'Yes' -> { }
+				'No' -> { }
+			)
+			'Reviewer': stategroup @default: 'No' (
+				'Yes' -> { }
+				'No' -> { }
+			)
+			'Employee': stategroup @default: 'Yes' (
+				'Yes' -> { }
+				'No' -> { }
+			)
+		}
+		'Contracts': collection @small @dormant if ?'Active'*'No' {
+			'Time Per Week': natural 'Minutes'
+			'Active': stategroup @default: 'Yes' (
+				'Yes' -> { }
+				'No' -> { }
+			)
+		}
+	}
+
+	'Years': collection @dormant if ?'Closed'*'Yes' {
+		'Closed': stategroup @default: 'No' (
+			'Yes' -> { }
+			'No' -> { }
+		)
+
+		'Project Groups' #writer 'Project Manager': collection {
+			'Owner': text -> forward .^ % 'Users'
+			'Comments': text @multi-line
+			'Sections': collection {
+				'Projects': reference-set
+					-> . 'Years' . 'Projects' ? 'Billable' | 'Yes'
+					=> inverse > 'Section'
+				'Rate': integer '€/hour'
+				'Declaration Method': stategroup @default: 'Declaration' (
+					'Fixed Price' -> {
+						'Final Amount': integer '€'
+					}
+					'Declaration' -> {
+						'Budget': integer 'Hours'
+						'Budget Amount':= integer '€' = product (
+							# 'Budget' as 'Hours',
+							?^ # 'Rate'
+						)
+					}
+				)
+				'Declaration Budget':= integer '€' = switch ( ? 'Declaration Method' ) (
+					|'Fixed Price' = $ # 'Final Amount'
+					|'Declaration' = $ # 'Budget Amount'
+				)
+				'Expenses Budget': integer '€'
+				'Total Budget':= integer '€' = sumlist (
+					# 'Declaration Budget',
+					# 'Expenses Budget'
+				)
+			}
+			'Total Budget':= integer '€' = sum . 'Sections' # 'Total Budget'
+		}
+
+		'Projects' #writer 'Project Manager': collection @dormant if ?'Active'*'No' {
+			'Active': stategroup @default: 'Yes' (
+				'Yes' -> { }
+				'No' -> { }
+			)
+			'Subsidized': stategroup (
+				'Yes' -> { }
+				'No' -> { }
+			)
+			'Registrations On Project': reference-set
+				-> . 'Years' % 'Users' % 'Weeks' % 'Days' . 'Registrations' ? 'Activity' | 'Worked On Project'
+				=> inverse > 'Project'
+			'Registered Time':= integer 'Minutes' = sum < 'Registrations On Project' ?^ # 'Duration'
+			'Project Group': text -> .^ . 'Project Groups'
+			'Billable': stategroup (
+				'No' -> { }
+				'Yes' -> {
+					'Section': text -> ?^ > 'Project Group' . 'Sections' -< 'Projects' @identifying
+					'Budget': natural 'Minutes'
+					'Declarations': collection {
+						'Minutes': natural 'Minutes'
+					}
+					'Declared':= integer 'Minutes' = sum . 'Declarations' # 'Minutes'
+					'Remaining Budget':= integer 'Minutes' = sumlist (
+						# 'Budget',
+						- # 'Declared'
+					)
+				}
+			)
+		}
+
+		'Weeks': collection {
+			'Days': collection {
+				'Date': integer 'Date' @identifying
+				'Is an Holiday': stategroup (
+					'No' -> { }
+					'Yes' -> {
+						'Holiday': text @identifying
+					}
+				)
+				'Week Day': stategroup (
+					'Monday' -> { }
+					'Tuesday' -> { }
+					'Wednesday' -> { }
+					'Thursday' -> { }
+					'Friday' -> { }
+					'Saturday' -> { }
+					'Sunday' -> { }
+				)
+			}
+		}
+		'Users': collection -> .^ . 'Users' {
+			'Subsidized': stategroup @description: "WBSO" (
+				'Yes' -> { }
+				'No' -> { }
+			)
+			'Weeks': collection -> %^ . 'Weeks' @dormant if ?'Submitted'*'Yes'  {
+				'Days': collection -> >key . 'Days' @small {
+					'Registrations' #writer 'Employee': collection  @guid @small {
+						'Duration': natural 'Minutes' @min: 15 @max: 1440 @description: "At least 15min"
+						'Activity': stategroup @default: 'Worked On Project' (
+							'Worked On Project' -> {
+								'Project': text -> ?^ .^ %^ %^ %^ . 'Projects' -< 'Registrations On Project'
+							}
+							'Holiday' -> { }
+							'Sick Leave' -> { }
+							'Furlough' -> {
+								'Furlough Taken':= natural 'Minutes' = ?^ # 'Duration'
+							}
+							'TBD' -> { workfor 'Employee' }
+						)
+						'Description': text @multi-line
+					}
+					'Total Duration' := integer 'Minutes' = sum . 'Registrations' # 'Duration'
+					'Furlough Taken':= integer 'Minutes' = sum . 'Registrations' ? 'Activity' | 'Furlough' # 'Furlough Taken'
+				}
+				'Submitted' #writer 'Employee': stategroup @default: 'No' (
+					'No' -> { workfor 'Employee' }
+					'Yes' -> {
+						'Fixed Contract': stategroup @default: 'Yes' (
+							'No' -> { }
+							'Yes' -> {
+								'Contract': text -> ?^ ?^ %^ >key . 'Contracts'
+								'Contractual Time Per Week':= natural 'Minutes' = > 'Contract' # 'Time Per Week'
+							}
+						)
+						'Approved': stategroup  @default: 'No' (
+							'No' -> { }
+							'Yes' -> {
+								'Timestamp' #writer 'Project Manager': integer 'Time' @default: now
+								'Approver'  #writer 'Project Manager': text -> ?^ ?^ %^ %^ .^ . 'Users' @metadata
+							}
+						)
+					}
+				)
+				'Total Duration' := integer 'Minutes' = sum % 'Days' # 'Total Duration'
+				'Furlough Taken':= integer 'Minutes' = sum % 'Days' # 'Furlough Taken'
+				'Overtime Known':= stategroup = switch ( ? 'Submitted' ) (
+					| 'No' = 'No'
+					| 'Yes' = switch ( $ ? 'Fixed Contract' ) (
+						| 'No' = 'No'
+						| 'Yes' = 'Yes' ( 'Contract Known' => $ )
+					)
+				)
+				(
+					'No' -> { }
+					'Yes' ( 'Contract Known' : . 'Years' % 'Users' % 'Weeks' ? 'Submitted'|'Yes' ? 'Fixed Contract'|'Yes' ) -> {
+						'Deviation':= integer 'Minutes' = sumlist (
+							?^ # 'Total Duration',
+							- & 'Contract Known' # 'Contractual Time Per Week'
+						)
+					}
+				)
+			}
+			'Furlough Budget' #writer 'Project Manager': integer 'Minutes'
+				@description: "Available time off according to your contract."
+			'Furlough Taken' := integer 'Minutes' = sum % 'Weeks' # 'Furlough Taken'
+				@description: "Time off already used."
+			'Furlough Remaining':= integer 'Minutes' = sumlist (
+				# 'Furlough Budget',
+				- # 'Furlough Taken'
+			)   @description: "Difference between available and used time off."
+			'Overtime':= integer 'Minutes' = sum % 'Weeks' ? 'Overtime Known'|'Yes' # 'Deviation'
+				@description: "Total of all deviations from your contractual time."
+			'Furlough Budget Remaining':= integer 'Minutes' = sumlist (
+				# 'Furlough Budget',
+				# 'Overtime',
+				- # 'Furlough Taken'
+			)   @description: "Time off remaining for this year."
+		}
+	}
+}
+
+numerical-types
+	'Date'                   @date
+	'Time'                   @date-time
+	'Hours'                  @duration: hours
+	'Minutes'                @duration: minutes
+	'€' = 'Hours' * '€/hour' @label: "€"
+	'€/hour'                 @label: "€/h"

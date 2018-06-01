@@ -1,0 +1,228 @@
+users
+	dynamic : . 'gebruikers'
+	password : . 'wachtwoord'
+
+roles
+	'beheerder': dynamic + 'rollen' ? 'beheerder' | 'ja'
+	'projectbeheerder': dynamic + 'rollen' ? 'projectbeheerder' | 'ja'
+	'werknemer': dynamic + 'rollen' ? 'werknemer' | 'ja'
+	'gast': dynamic
+
+root #writer 'beheerder' #reader 'gast' {
+	'gebruikers': collection {
+		'naam': text @identifying
+		'wachtwoord' #writer 'werknemer': text @validate: ".{8}" @description: "Minstens 8 karakters"
+		'rollen': group {
+			'beheerder': stategroup @default: 'nee' (
+				'ja' -> { }
+				'nee' -> { }
+			)
+			'projectbeheerder': stategroup @default: 'nee' (
+				'ja' -> { }
+				'nee' -> { }
+			)
+			'reviewer': stategroup @default: 'nee' (
+				'ja' -> { }
+				'nee' -> { }
+			)
+			'werknemer': stategroup @default: 'ja' (
+				'ja' -> { }
+				'nee' -> { }
+			)
+		}
+		'contractperiodes': collection @small @dormant if ?'actief'*'nee' {
+			'contractduur per week': natural 'minuten'
+			'actief': stategroup @default: 'ja' (
+				'ja' -> { }
+				'nee' -> { }
+			)
+		}
+	}
+	'jaren': collection @dormant if ?'jaar afgesloten'*'ja' {
+		'jaar afgesloten': stategroup @default: 'nee' (
+			'ja' -> { }
+			'nee' -> { }
+		)
+		'projectgroepen' #writer 'projectbeheerder': collection {
+			'eigenaar': text -> forward .^ % 'gebruikers'
+			'commentaar': text
+			'contractregels': collection {
+				'projecten': reference-set -> . 'jaren' . 'projecten' ? 'declarabel' | 'ja' => inverse > 'contractregel'
+				'tarief': integer 'euro per uur'
+				'verwachte opleverdatum': integer 'datum'
+				'uren verrekeningsmethode': stategroup @default: 'declaratie' (
+					'fixed price' -> {
+						'bedrag bij oplevering': integer 'euro'
+					}
+					'declaratie' -> {
+						'budget in uren': integer 'uren'
+						'budget in geld':= integer 'euro' = product ( # 'budget in uren' as 'uren', ?^ # 'tarief' )
+					}
+				)
+				'fees begroting':= integer 'euro' = switch ( ? 'uren verrekeningsmethode' ) (
+					|'fixed price' = $ # 'bedrag bij oplevering'
+					|'declaratie' = $ # 'budget in geld'
+				)
+				'kostenbegroting': integer 'euro'
+				'totaalbedrag begroting':= integer 'euro' = sumlist ( # 'fees begroting', # 'kostenbegroting' )
+			}
+			'totaalbedrag begroting':= integer 'euro' = sum . 'contractregels' # 'totaalbedrag begroting'
+		}
+		'projecten' #writer 'projectbeheerder': collection @dormant if ?'actief'*'nee' {
+			'actief': stategroup @default: 'ja' (
+				'ja' -> { }
+				'nee' -> { }
+			)
+			'WBSO': stategroup (
+				'ja' -> { }
+				'nee' -> { }
+			)
+			'projectregistraties': reference-set -> . 'jaren' % 'gebruikers' % 'weken' % 'weekdagen' . 'registraties' ? 'activiteit' | 'gewerkt aan project' => inverse > 'project'
+			'geregistreerde tijd':= integer 'minuten' = sum < 'projectregistraties' ?^ # 'duur'
+			'projectgroep': text -> .^ . 'projectgroepen'
+			'declarabel': stategroup (
+				'nee' -> { }
+				'ja' -> {
+					'contractregel': text -> ?^ > 'projectgroep' . 'contractregels' -< 'projecten' @identifying
+					'budget': natural 'minuten'
+					'declaraties': collection {
+						'minuten': natural 'minuten'
+					}
+					'gedeclareerd':= integer 'minuten' = sum . 'declaraties' # 'minuten'
+					'resterend budget':= integer 'minuten' = sumlist (
+						# 'budget',
+						- # 'gedeclareerd'
+					)
+				}
+			)
+		}
+		'weken': collection {
+			'weekdagen': collection {
+				'datum': integer 'datum' @identifying
+				'is een feestdag': stategroup (
+					'nee' -> { }
+					'ja' -> {
+						'feestdag': text
+					}
+				)
+				'weekdag': stategroup (
+					'maandag' -> { }
+					'dinsdag' -> { }
+					'woensdag' -> { }
+					'donderdag' -> { }
+					'vrijdag' -> { }
+					'zaterdag' -> { }
+					'zondag' -> { }
+				)
+			}
+		}
+		'gebruikers': collection -> .^ . 'gebruikers' {
+			'WBSO': stategroup (
+				'ja' -> { }
+				'nee' -> { }
+			)
+			'weken': collection -> %^ . 'weken' @dormant if ?'uren ingediend'*'ja'  {
+				'weekdagen': collection -> >key . 'weekdagen' @small {
+					'registraties' #writer 'werknemer': collection  @guid @small {
+						'duur': natural 'minuten' @min: 15 @max: 1440 @description: "Minstens 15min"
+						'activiteit': stategroup @default: 'gewerkt aan project' (
+							'gewerkt aan project' -> {
+								'project': text -> ?^ .^ %^ %^ %^ . 'projecten' -< 'projectregistraties'
+							}
+							'feestdag' -> { }
+							'ziek' -> { }
+							'vrij' -> {
+								'vrije tijd opgenomen':= natural 'minuten' = ?^ # 'duur'
+							}
+							'nog toe te wijzen' -> { workfor 'werknemer' }
+						)
+						'omschrijving': text @multi-line
+					}
+					'totale duur' := integer 'minuten' = sum . 'registraties' # 'duur'
+					'vrije tijd opgenomen':= integer 'minuten' = sum . 'registraties' ? 'activiteit' | 'vrij' # 'vrije tijd opgenomen'
+				}
+				'uren ingediend' #writer 'werknemer': stategroup @default: 'nee' (
+					'nee' -> { workfor 'werknemer' }
+					'ja' -> {
+						'vaste aanstelling': stategroup @default: 'ja' (
+							'nee' -> { }
+							'ja' -> {
+								'contractperiode': text -> ?^ ?^ %^ >key . 'contractperiodes'
+								'contractduur':= natural 'minuten' = > 'contractperiode' # 'contractduur per week'
+							}
+						)
+						'goedgekeurd': stategroup  @default: 'nee' (
+							'nee' -> { }
+							'ja' -> {
+								'wanneer' #writer 'projectbeheerder': integer 'tijdstip' @default: now
+								'door'    #writer 'projectbeheerder': text -> ?^ ?^ %^ %^ .^ . 'gebruikers' @metadata
+							}
+						)
+					}
+				)
+				'totale duur' := integer 'minuten' = sum % 'weekdagen' # 'totale duur'
+				'opgenomen vrije tijd':= integer 'minuten' = sum % 'weekdagen' # 'vrije tijd opgenomen'
+				'overuren bekend':= stategroup = switch ( ? 'uren ingediend' ) (
+					| 'nee' = 'nee'
+					| 'ja' = switch ( $ ? 'vaste aanstelling' ) (
+						| 'nee' = 'nee'
+						| 'ja' = 'ja' ( 'contract bekend' => $ )
+					)
+				) @description: "Ingediende uren worden vergeleken met de contracperiode"
+				(
+					'nee' -> { }
+					'ja' ( 'contract bekend' : . 'jaren' % 'gebruikers' % 'weken' ? 'uren ingediend'|'ja' ? 'vaste aanstelling'|'ja' ) -> {
+						'afwijking':= integer 'minuten' = sumlist (
+							?^ # 'totale duur',
+							- & 'contract bekend' # 'contractduur'
+						)
+					}
+				)
+			}
+			'vrije tijd' #writer 'projectbeheerder': integer 'minuten'
+				@description: "Beschikbare vakantiedagen dit jaar volgens je contract"
+			'vrije tijd opgenomen' := integer 'minuten' = sum % 'weken' # 'opgenomen vrije tijd'
+				@description: "Geregistreerde vrije tijd"
+			'vrije tijd over':= integer 'minuten' = sumlist (
+				# 'vrije tijd',
+				- # 'vrije tijd opgenomen'
+			)   @description: "Verschil beschikbaar vs. opgenomen"
+			'overuren':= integer 'minuten' = sum % 'weken' ? 'overuren bekend'|'ja' # 'afwijking'
+				@description: "Totaal van afwijkingen tov. contractduur, van ingediende weken"
+			'saldo vrije tijd en overuren':= integer 'minuten' = sumlist (
+				# 'vrije tijd',
+				# 'overuren',
+				- # 'vrije tijd opgenomen'
+			)   @description: "Vrije tijd over + overuren"
+		}
+		'WBSO' #writer 'projectbeheerder': group {
+			'periodes': collection {
+				'referentienummer': text
+				'project(-en)': text
+				'startdatum': integer 'datum'
+				'einddatum': integer 'datum'
+				'begrootte aantal uren': natural 'uren'
+				'meldmoment verstreken': stategroup (
+					'nee' -> { }
+					'ja' -> {
+						'afhandeling': stategroup (
+							'niet gemeld' -> { }
+							'uren gemeld' -> {
+								'gemelde aantal uren': integer 'uren'
+							}
+						)
+					}
+				)
+			}
+		}
+	}
+}
+
+numerical-types
+	'datum' in 'dagen'               @date
+	'tijdstip'                       @date-time
+	'dagen'
+	'uren'                           @duration: hours
+	'minuten'                        @duration: minutes
+	'euro' = 'uren' * 'euro per uur' @label: "€"
+	'euro per uur'                   @label: "€/h"

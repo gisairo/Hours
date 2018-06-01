@@ -1,0 +1,4 @@
+users anonymous
+roles '': anonymous
+root #writer '' #reader '' { }
+numerical-types
