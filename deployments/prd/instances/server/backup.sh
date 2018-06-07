@@ -5,13 +5,9 @@ set -e
 # Configure
 # --------------------------
 
-SYSTEM="urenregistratie_server"
+SYSTEM="server"
 
 #ABS_BACKUPDIR="/tmp/backup"
-
-# --------------------------
-# Datastore: new-protocol.d2
-# --------------------------
 
 DATE_NOW=$(date +'%Y-%m-%d-%H-%M-%S')
 
