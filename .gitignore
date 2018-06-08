@@ -11,8 +11,10 @@ package.sh
 # Compiled source #
 ###################
 migration
+*.migration
 definition.json
 image
+*.image
 *.lib
 *.com
 *.class

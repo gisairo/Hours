@@ -1,0 +1,9 @@
+application creator: "M-industries"
+application name: "Hours"
+application wallpaper url: "https://www.m-industries.com/wallpapers/uren.jpg"
+anonymous login: disabled
+csv actions: enabled
+report limit: 1000000
+system administrator role: 'Employee'
+power user role: 'Employee'
+announcement: "" [ ]
