@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Alan.sh is...
+# Alan is...
 # - A bootstrapping solution for utilities needed to interact with Alan projects
 # - A shorthand for these utilities
 # - A proxy to build system and compiler tools in an Alan project
@@ -9,7 +9,7 @@ set -e
 # If an "offline" file is present in the project, it will not download anything.
 
 
-VERSION="2018.28"  # bootstrap a new version using "alan.sh bootstrap --version <version>"
+VERSION="2018.28"  # bootstrap a new version using "alan bootstrap --version <version>"
 
 function find_up {
 	UP_DIR=$(pwd)
@@ -25,7 +25,7 @@ INSTALL_ROOT=$(find_up "versions.json")
 
 function pass_though {
 	if [[ ! -e "$SCRIPTDIR/alan-tools" ]]; then
-		echo "Run ./alan.sh fetch first"
+		echo "Run ./alan fetch first"
 		exit
 	fi
 
@@ -41,7 +41,7 @@ function pass_though {
 	elif [[ -e "$INSTALL_ROOT/dataenv/platform/project-cli/alan-dataenv.sh" ]]; then
 		"$INSTALL_ROOT/dataenv/platform/project-cli/alan-dataenv.sh" "$@"
 	else
-		echo "Run ./alan.sh fetch first"
+		echo "Run ./alan fetch first"
 	fi
 	exit
 }
@@ -52,7 +52,7 @@ function download_self {
 		echo "Remove the 'offline' file to re-enable downloads"
 		exit 0
 	fi
-	curl -s "http://www.m-industries.com/tools/utils/$VERSION/$PLATFORM/utils.tar.gz" | tar xzfC - "$SCRIPTDIR"
+	curl -s "https://alan-platform.com/utils/$VERSION/$PLATFORM/utils.tar.gz" | tar xzfC - "$SCRIPTDIR"
 }
 
 if [[ $(uname) == "Darwin" ]]; then
@@ -75,7 +75,7 @@ case $1 in
 
 	--help)
 		echo "setup: [bootstrap|upgrade|fetch]"
-		echo "  bootstrap: download utilities needed by alan.sh"
+		echo "  bootstrap: download utilities needed by alan"
 		echo "  upgrade:   download the latest versions.json for projects"
 		echo "  fetch:     download an environment (use 'fetch --help' for more info)"
 		echo ""
