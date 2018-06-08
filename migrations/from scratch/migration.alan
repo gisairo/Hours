@@ -1,7 +1,7 @@
 root {
-	'Users' : dictionary = {
+	'Users' : collection = {
 		'root' {
-			'Contracts' : dictionary = { }
+			'Contracts' : collection = { }
 			'Name' : text = ""
 			'Password' : text = "53cfd037ec848267703b98cc9847b1521276b0cd18fcb92b36062fbf96a70b45"
 			'Roles' : group = {
@@ -12,7 +12,7 @@ root {
 			}
 		}
 	}
-	'Years' : dictionary = { }
+	'Years' : collection = { }
 }
 
 numerical type conversion

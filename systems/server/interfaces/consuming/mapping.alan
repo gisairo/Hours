@@ -1,4 +1,3 @@
-interfaces mapping
-roles mapping
-root (
-)
+interfaces
+roles
+root { }

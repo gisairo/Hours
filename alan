@@ -1,0 +1,133 @@
+#!/bin/bash
+set -e
+
+# Alan.sh is...
+# - A bootstrapping solution for utilities needed to interact with Alan projects
+# - A shorthand for these utilities
+# - A proxy to build system and compiler tools in an Alan project
+#
+# If an "offline" file is present in the project, it will not download anything.
+
+
+VERSION="2018.28"  # bootstrap a new version using "alan.sh bootstrap --version <version>"
+
+function find_up {
+	UP_DIR=$(pwd)
+	while [[ "$UP_DIR" != "" && ! -e "$UP_DIR/$1" ]]; do
+		UP_DIR=${UP_DIR%/*}
+	done
+	echo "$UP_DIR"
+}
+
+BASEDIR=$(dirname "$0")
+SCRIPTDIR=$(cd "$BASEDIR"; pwd)
+INSTALL_ROOT=$(find_up "versions.json")
+
+function pass_though {
+	if [[ ! -e "$SCRIPTDIR/alan-tools" ]]; then
+		echo "Run ./alan.sh fetch first"
+		exit
+	fi
+
+	if [[ ! -e "$INSTALL_ROOT" ]]; then
+		echo "Cannot find project"
+		exit
+	fi
+
+	# ... look in devenv
+	if [[ -e "$INSTALL_ROOT/devenv/platform/project-cli/alan-devenv.sh" ]]; then
+		"$INSTALL_ROOT/devenv/platform/project-cli/alan-devenv.sh" "$@"
+	# ... or in dataenv
+	elif [[ -e "$INSTALL_ROOT/dataenv/platform/project-cli/alan-dataenv.sh" ]]; then
+		"$INSTALL_ROOT/dataenv/platform/project-cli/alan-dataenv.sh" "$@"
+	else
+		echo "Run ./alan.sh fetch first"
+	fi
+	exit
+}
+
+function download_self {
+	if [[ -e "$INSTALL_ROOT/offline" ]]; then
+		echo "Cannot download in offline mode"
+		echo "Remove the 'offline' file to re-enable downloads"
+		exit 0
+	fi
+	curl -s "http://www.m-industries.com/tools/utils/$VERSION/$PLATFORM/utils.tar.gz" | tar xzfC - "$SCRIPTDIR"
+}
+
+if [[ $(uname) == "Darwin" ]]; then
+	PLATFORM="darwin-x64"
+elif [[ $(uname) == "Linux" ]]; then
+	PLATFORM="linux-x64"
+else
+	PLATFORM="windows-x64"
+fi
+
+if [[ $# -lt 1 ]]; then
+	pass_though "$@"
+fi
+
+case $1 in
+	--version)
+		echo $VERSION
+		exit
+		;;
+
+	--help)
+		echo "setup: [bootstrap|upgrade|fetch]"
+		echo "  bootstrap: download utilities needed by alan.sh"
+		echo "  upgrade:   download the latest versions.json for projects"
+		echo "  fetch:     download an environment (use 'fetch --help' for more info)"
+		echo ""
+
+		pass_though "$@"
+		"$SCRIPTDIR/alan-tools/package.sh" "$@"
+		;;
+
+	bootstrap)
+		if [[ $2 == "--version" ]]; then
+			VERSION=$3
+		fi
+		download_self
+		;;
+
+	upgrade)
+		download_self
+		curl -s -L -o versions.json "https://alan-platform.com/versions/versions.json"
+		;;
+
+	package)
+		download_self
+		shift 1
+		"$SCRIPTDIR/alan-tools/package.sh" "$@"
+		;;
+
+	fetch)
+		download_self
+
+		if [[ ${PWD##*/} == "migrations" && -f "versions.json" ]]; then
+			# assume dataenv if currect dir is called "migrations"
+			"$SCRIPTDIR/alan-tools/fetch" dataenv
+		elif [[ "$2" == "" ]]; then
+			# allow shorthand for devenv
+			pushd "$INSTALL_ROOT" >> /dev/null
+				"$SCRIPTDIR/alan-tools/fetch" devenv
+			popd >> /dev/null
+		else
+			shift 1
+			pushd "$INSTALL_ROOT" >> /dev/null
+				"$SCRIPTDIR/alan-tools/fetch" "$@"
+			popd >> /dev/null
+		fi
+		;;
+
+	connect)
+		shift 1
+		"$SCRIPTDIR/alan-tools/application-client" "$@"
+		;;
+
+
+	*)
+		pass_though "$@"
+		;;
+esac

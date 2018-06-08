@@ -1,6 +1,6 @@
 root {
-	'Users' : dictionary = . 'gebruikers' {
-		'Contracts' : dictionary = . 'contractperiodes' {
+	'Users' : collection = . 'gebruikers' {
+		'Contracts' : collection = . 'contractperiodes' {
 			'Active' : stategroup = switch ( ? 'actief' ) (
 				| 'ja' = 'Yes' { }
 				| 'nee' = 'No' { }
@@ -28,38 +28,38 @@ root {
 		}
 		'Password' : text = . 'wachtwoord'
 	}
-	'Years' : dictionary = . 'jaren' {
-		'Users' : matrix = % 'gebruikers' {
+	'Years' : collection = . 'jaren' {
+		'Users' : collection => % 'gebruikers' {
 			'Subsidized' : stategroup = switch ( ? 'WBSO' ) (
 				| 'ja' = 'Yes' { }
 				| 'nee' = 'No' { }
 			)
 			'Furlough Budget' : number = # 'vrije tijd' as 'minuten'
-			'Weeks' : matrix = % 'weken' {
+			'Weeks' : collection => % 'weken' {
 				'Submitted' : stategroup = switch ( ? 'uren ingediend' ) (
 					| 'ja' = 'Yes' {
 						'Approved' : stategroup = switch ( ? 'goedgekeurd' ) (
 							| 'ja' = 'Yes' {
-								'Approver' : reference = > 'door'
+								'Approver' : text => > 'door'
 								'Timestamp' : number = # 'wanneer' as 'tijdstip'
 							}
 							| 'nee' = 'No' { }
 						)
 						'Fixed Contract' : stategroup = switch ( ? 'vaste aanstelling' ) (
 							| 'ja' = 'Yes' {
-								'Contract' : reference = > 'contractperiode'
+								'Contract' : text => > 'contractperiode'
 							}
 							| 'nee' = 'No' { }
 						)
 					}
 					| 'nee' = 'No' { }
 				)
-				'Days' : matrix = % 'weekdagen' {
-					'Registrations' : dictionary = . 'registraties' {
+				'Days' : collection => % 'weekdagen' {
+					'Registrations' : collection = . 'registraties' {
 						'Activity' : stategroup = switch ( ? 'activiteit' ) (
 							| 'feestdag' = 'Holiday' { }
 							| 'gewerkt aan project' = 'Worked On Project' {
-								'Project' : reference = > 'project'
+								'Project' : text => > 'project'
 							}
 							| 'nog toe te wijzen' = 'TBD' { }
 							| 'vrij' = 'Furlough' { }
@@ -75,7 +75,7 @@ root {
 			| 'ja' = 'Yes' { }
 			| 'nee' = 'No' { }
 		)
-		'Projects' : dictionary = . 'projecten' {
+		'Projects' : collection = . 'projecten' {
 			'Subsidized' : stategroup = switch ( ? 'WBSO' ) (
 				| 'ja' = 'Yes' { }
 				| 'nee' = 'No' { }
@@ -87,18 +87,18 @@ root {
 			'Billable' : stategroup = switch ( ? 'declarabel' ) (
 				| 'ja' = 'Yes' {
 					'Budget' : number = # 'budget' as 'minuten'
-					'Section' : reference = > 'contractregel'
-					'Declarations' : dictionary = . 'declaraties' {
+					'Section' : text => > 'contractregel'
+					'Declarations' : collection = . 'declaraties' {
 						'Minutes' : number = # 'minuten' as 'minuten'
 					}
 				}
 				| 'nee' = 'No' { }
 			)
-			'Project Group' : reference = > 'projectgroep'
+			'Project Group' : text => > 'projectgroep'
 		}
-		'Project Groups' : dictionary = . 'projectgroepen' {
+		'Project Groups' : collection = . 'projectgroepen' {
 			'Comments' : text = . 'commentaar'
-			'Sections' : dictionary = . 'contractregels' {
+			'Sections' : collection = . 'contractregels' {
 				'Expenses Budget' : number = # 'kostenbegroting' as 'euro'
 				'Rate' : number = # 'tarief' as 'euro per uur'
 				'Declaration Method' : stategroup = switch ( ? 'uren verrekeningsmethode' ) (
@@ -110,10 +110,10 @@ root {
 					}
 				)
 			}
-			'Owner' : reference = > 'eigenaar'
+			'Owner' : text => > 'eigenaar'
 		}
-		'Weeks' : dictionary = . 'weken' {
-			'Days' : dictionary = . 'weekdagen' {
+		'Weeks' : collection = . 'weken' {
+			'Days' : collection = . 'weekdagen' {
 				'Date' : number = # 'datum' as 'datum'
 				'Is an Holiday' : stategroup = switch ( ? 'is een feestdag' ) (
 					| 'ja' = 'Yes' {

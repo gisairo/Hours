@@ -2,11 +2,9 @@
 ###################
 dataenv
 devenv
-_ops
 migrations/*/data
-utils
+alan-tools
 README.md
-package.sh
 
 # Compiled source #
 ###################

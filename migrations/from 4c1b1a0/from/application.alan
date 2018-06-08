@@ -30,7 +30,7 @@ root #writer 'beheerder' #reader 'gast' {
 				'nee' -> { }
 			)
 		}
-		'contractperiodes': collection @small @dormant if ?'actief'*'nee' {
+		'contractperiodes': collection @small @dormant if ?'actief'|'nee' {
 			'contractduur per week': natural 'minuten'
 			'actief': stategroup @default: 'ja' (
 				'ja' -> { }
@@ -38,7 +38,7 @@ root #writer 'beheerder' #reader 'gast' {
 			)
 		}
 	}
-	'jaren': collection @dormant if ?'jaar afgesloten'*'ja' {
+	'jaren': collection @dormant if ?'jaar afgesloten'|'ja' {
 		'jaar afgesloten': stategroup @default: 'nee' (
 			'ja' -> { }
 			'nee' -> { }
@@ -68,7 +68,7 @@ root #writer 'beheerder' #reader 'gast' {
 			}
 			'totaalbedrag begroting':= integer 'euro' = sum . 'contractregels' # 'totaalbedrag begroting'
 		}
-		'projecten' #writer 'projectbeheerder': collection @dormant if ?'actief'*'nee' {
+		'projecten' #writer 'projectbeheerder': collection @dormant if ?'actief'|'nee' {
 			'actief': stategroup @default: 'ja' (
 				'ja' -> { }
 				'nee' -> { }
@@ -121,7 +121,7 @@ root #writer 'beheerder' #reader 'gast' {
 				'ja' -> { }
 				'nee' -> { }
 			)
-			'weken': collection -> %^ . 'weken' @dormant if ?'uren ingediend'*'ja'  {
+			'weken': collection -> %^ . 'weken' @dormant if ?'uren ingediend'|'ja'  {
 				'weekdagen': collection -> >key . 'weekdagen' @small {
 					'registraties' #writer 'werknemer': collection  @guid @small {
 						'duur': natural 'minuten' @min: 15 @max: 1440 @description: "Minstens 15min"
