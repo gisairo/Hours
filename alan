@@ -25,7 +25,7 @@ INSTALL_ROOT=$(find_up "versions.json")
 
 function pass_though {
 	if [[ ! -e "$SCRIPTDIR/alan-tools" ]]; then
-		echo "Run ./alan fetch first"
+		echo "Run ./alan bootstrap first"
 		exit
 	fi
 
@@ -41,7 +41,7 @@ function pass_though {
 	elif [[ -e "$INSTALL_ROOT/dataenv/platform/project-cli/alan-dataenv.sh" ]]; then
 		"$INSTALL_ROOT/dataenv/platform/project-cli/alan-dataenv.sh" "$@"
 	else
-		echo "Run ./alan fetch first"
+		echo "Run ./alan bootstrap first"
 	fi
 	exit
 }
@@ -74,21 +74,15 @@ case $1 in
 		;;
 
 	--help)
-		echo "setup: [bootstrap|upgrade|fetch]"
-		echo "  bootstrap: download utilities needed by alan"
-		echo "  upgrade:   download the latest versions.json for projects"
-		echo "  fetch:     download an environment (use 'fetch --help' for more info)"
+		echo "usage: alan [bootstrap|package|connect|upgrade]"
+		echo -e "  \\033[1mbootstrap\\033[0m: download an environment (aka. fetch)"
+		echo -e "  \\033[1mpackage\\033[0m:   package a project for deployment"
+		echo -e "  \\033[1mconnect\\033[0m:   connect to an application-server"
+		echo -e "  \\033[1mupgrade\\033[0m:   download the latest versions.json for projects"
 		echo ""
 
-		pass_though "$@"
-		"$SCRIPTDIR/alan-tools/package.sh" "$@"
-		;;
-
-	bootstrap)
-		if [[ $2 == "--version" ]]; then
-			VERSION=$3
-		fi
-		download_self
+		pass_though --help
+		"$SCRIPTDIR/alan-tools/package.sh" --help
 		;;
 
 	upgrade)
@@ -102,7 +96,10 @@ case $1 in
 		"$SCRIPTDIR/alan-tools/package.sh" "$@"
 		;;
 
-	fetch)
+	bootstrap | fetch)
+		if [[ $2 == "--version" ]]; then
+			VERSION=$3
+		fi
 		download_self
 
 		if [[ ${PWD##*/} == "migrations" && -f "versions.json" ]]; then
