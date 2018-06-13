@@ -1,3 +1,5 @@
+os: osx
+
 install:
   - ./alan bootstrap
 
