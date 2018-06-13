@@ -14,7 +14,7 @@ system options
 			at 30
 
 providing connections
-	'client' socket "127.0.0.1" : 7577
+	'client' socket "0.0.0.0" : 7584
 
 enable persistent storage for
 	'server'

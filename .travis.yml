@@ -1,7 +1,13 @@
 os: osx
 
-install:
-  - ./alan bootstrap
+install: true
 
 script:
+  - cd migrations
+  - ../alan fetch dataenv
+  - ../alan build
+  - cd -
+  - mv ./migrations/from_scratch.migration ./deployments/default/instances/server.migration
+  - ./alan bootstrap
   - ./alan build
+  - ./alan package devenv/output/project.definition deployments/default -f minors.json
