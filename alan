@@ -9,7 +9,7 @@ set -e
 # If an "offline" file is present in the project, it will not download anything.
 
 
-VERSION="2018.28"  # bootstrap a new version using "alan bootstrap --version <version>"
+VERSION="2018.29"  # bootstrap a new version using "alan bootstrap --version <version>"
 
 function find_up {
 	UP_DIR=$(pwd)
@@ -80,6 +80,10 @@ case $1 in
 		echo -e "  \\033[1mconnect\\033[0m:   connect to an application-server"
 		echo -e "  \\033[1mupgrade\\033[0m:   download the latest versions.json for projects"
 		echo ""
+		echo "  alan --help: display the information you're reading now"
+		echo "  alan --version: display the version of alan"
+		echo "  alan bootstrap --version [version]: switch to a different version of alan"
+		echo ""
 
 		pass_though --help
 		"$SCRIPTDIR/alan-tools/package.sh" --help
@@ -99,8 +103,9 @@ case $1 in
 	bootstrap | fetch)
 		if [[ $2 == "--version" ]]; then
 			VERSION=$3
+			download_self
+			shift 2
 		fi
-		download_self
 
 		if [[ ${PWD##*/} == "migrations" && -f "versions.json" ]]; then
 			# assume dataenv if currect dir is called "migrations"
@@ -108,12 +113,12 @@ case $1 in
 		elif [[ "$2" == "" ]]; then
 			# allow shorthand for devenv
 			pushd "$INSTALL_ROOT" >> /dev/null
-				"$SCRIPTDIR/alan-tools/fetch" devenv
+			"$SCRIPTDIR/alan-tools/fetch" devenv
 			popd >> /dev/null
 		else
 			shift 1
 			pushd "$INSTALL_ROOT" >> /dev/null
-				"$SCRIPTDIR/alan-tools/fetch" "$@"
+			"$SCRIPTDIR/alan-tools/fetch" "$@"
 			popd >> /dev/null
 		fi
 		;;

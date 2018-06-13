@@ -1,14 +1,14 @@
 {
-	"platform version": "2018.28",
+	"platform version": "2018.29",
 	"system types": {
 		"auto-webclient": {
-			"version": "intrepid.4"
+			"version": "intrepid.5"
 		},
 		"datastore": {
-			"version": "24"
+			"version": "25"
 		},
 		"reporter": {
-			"version": "19"
+			"version": "20"
 		}
 	}
 }
