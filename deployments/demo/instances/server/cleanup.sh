@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # --------------------------
@@ -7,13 +7,18 @@ set -e
 
 SYSTEM="server"
 
-#ABS_BACKUPDIR="/tmp/cleanup"
+#ABS_BACKUPDIR="/tmp"
 
+# --------------------------
+# Datastore: 24
+# --------------------------
+
+INIT_PWD=$(pwd)
+BASEDIR=$(dirname "$0")
+SCRIPTDIR=$(cd "$BASEDIR"; pwd)
 DATE_NOW=$(date +'%Y-%m-%d-%H-%M-%S')
 
-echo "- Running cleanup hook with ABS_BACKUPDIR=${ABS_BACKUPDIR}"
-
-for SESSION_PATH in $(find "./sandbox.d/data/${SYSTEM}/session" -mindepth 1 -maxdepth 1 -type d); do
+for SESSION_PATH in $(find "${SCRIPTDIR}/session" -mindepth 1 -maxdepth 1 -type d); do
 	TMPFILE=$(mktemp)
 	find "${SESSION_PATH}" -type f > "${TMPFILE}"
 
@@ -21,14 +26,12 @@ for SESSION_PATH in $(find "./sandbox.d/data/${SYSTEM}/session" -mindepth 1 -max
 		SESSION=$(basename ${SESSION_PATH})
 
 		if [ -n "${ABS_BACKUPDIR}" ]; then
-			echo "- Archiving \"${ABS_BACKUPDIR}/session/${SESSION}/${DATE_NOW}.tar.gz\""
-			mkdir -p "${ABS_BACKUPDIR}/session/${SESSION}"
-			tar czf "${ABS_BACKUPDIR}/session/${SESSION}/${DATE_NOW}.tar.gz" -T "${TMPFILE}" "./image.d/system/${SYSTEM}"
+			mkdir -p "${ABS_BACKUPDIR}/session/${SYSTEM}/${SESSION}"
+			tar czf  "${ABS_BACKUPDIR}/session/${SYSTEM}/${SESSION}/${DATE_NOW}.tar.gz" -T "${TMPFILE}" "${INIT_PWD}/image.d/defin/system/${SYSTEM}" 2> /dev/null
 		fi
 
-		echo "- Removing archived session ${SESSION} files"
-		xargs rm -v < "${TMPFILE}"
+		xargs rm < "${TMPFILE}"
 	fi
 
-	rm -v "${TMPFILE}"
+	rm "${TMPFILE}"
 done
