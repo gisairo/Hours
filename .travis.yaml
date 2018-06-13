@@ -1,0 +1,5 @@
+install:
+  - ./alan bootstrap
+
+script:
+  - ./alan build
