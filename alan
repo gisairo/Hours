@@ -103,9 +103,9 @@ case $1 in
 	bootstrap | fetch)
 		if [[ $2 == "--version" ]]; then
 			VERSION=$3
-			download_self
 			shift 2
 		fi
+		download_self
 
 		if [[ ${PWD##*/} == "migrations" && -f "versions.json" ]]; then
 			# assume dataenv if currect dir is called "migrations"
