@@ -17,6 +17,7 @@ To create such a migration, you need to set up a separate working environment.
 
 Example layout for a migrations ("dataenv") environment:
 
+```
 migrations/
   \_ versions.json
   \_ from_version_x/
@@ -27,6 +28,7 @@ migrations/
               \_ application.alan
         \_ to/
               \_ application.alan(.link)
+```
 
 The versions.json would be the same as the one in your project,
 but with only the "datastore" system type in addition to the platform version.
