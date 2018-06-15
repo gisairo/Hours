@@ -84,6 +84,8 @@ case $1 in
 		echo "  alan --version: display the version of alan"
 		echo "  alan bootstrap --version [version]: switch to a different version of alan"
 		echo ""
+		echo "More info: https://alan-platform.com/docs/"
+		echo ""
 
 		pass_though --help
 		"$SCRIPTDIR/alan-tools/package.sh" --help
