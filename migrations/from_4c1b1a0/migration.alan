@@ -115,7 +115,7 @@ root {
 		'Weeks' : collection = . 'weken' {
 			'Days' : collection = . 'weekdagen' {
 				'Date' : number = # 'datum' as 'datum'
-				'Is an Holiday' : stategroup = switch ( ? 'is een feestdag' ) (
+				'Is a Holiday' : stategroup = switch ( ? 'is een feestdag' ) (
 					| 'ja' = 'Yes' {
 						'Holiday' : text = . 'feestdag'
 					}
