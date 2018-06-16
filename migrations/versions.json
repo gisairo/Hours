@@ -1,8 +1,8 @@
 {
-	"platform version": "2018.29",
+	"platform version": "2018.30",
 	"system types": {
 		"datastore": {
-			"version": "25"
+			"version": "26"
 		}
 	}
 }
