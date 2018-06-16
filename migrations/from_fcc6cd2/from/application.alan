@@ -111,7 +111,7 @@ root #writer 'Manager' #reader 'Employee' {
 		'Weeks': collection {
 			'Days': collection {
 				'Date': integer 'Date' @identifying
-				'Is a Holiday': stategroup (
+				'Is an Holiday': stategroup (
 					'No' -> { }
 					'Yes' -> {
 						'Holiday': text @identifying
