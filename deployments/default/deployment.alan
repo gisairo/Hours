@@ -4,6 +4,9 @@ instance data
 	'server'
 		from local migrate
 
+	'client'
+		from local
+
 	'reporter'
 		from local
 
