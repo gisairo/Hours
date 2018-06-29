@@ -9,7 +9,7 @@ set -e
 # If an "offline" file is present in the project, it will not download anything.
 
 
-VERSION="2018.31"
+VERSION="2018.32"
 
 function find_up {
 	UP_DIR=$(pwd)
@@ -53,8 +53,7 @@ function download_self {
 		exit 0
 	fi
 	if [[ -f "$INSTALL_ROOT/versions.json" && -f "$SCRIPTDIR/alan-tools/jq" ]]; then
-		READVER=$("$SCRIPTDIR/alan-tools/jq" -r '.["platform version"]' "$INSTALL_ROOT/versions.json")
-		echo $READVER
+		READVER=$("$SCRIPTDIR/alan-tools/jq" -r '.["platform version"]' < "$INSTALL_ROOT/versions.json")
 		if [[ $READVER != "" ]]; then
 			VERSION=$READVER
 		fi
@@ -76,19 +75,20 @@ fi
 
 case $1 in
 	--version)
-		echo $VERSION
+		echo "$VERSION"
 		exit
 		;;
 
 	--help)
-		echo "usage: alan [bootstrap|package|connect|upgrade]"
-		echo -e "  \\033[1mbootstrap\\033[0m: download an environment (aka. fetch)"
-		echo -e "  \\033[1mpackage\\033[0m:   package a project for deployment"
-		echo -e "  \\033[1mconnect\\033[0m:   connect to an application-server (requires Linux or macOS)"
-		echo -e "  \\033[1mupgrade\\033[0m:   download the latest versions.json for projects"
+		echo "Usage:"
+		echo "  alan (bootstrap|package|connect|upgrade)"
+		echo "  alan --help"
+		echo "  alan --version"
 		echo ""
-		echo "  alan --help: display the information you're reading now"
-		echo "  alan --version: display the version of alan"
+		echo "  bootstrap   Download an environment (aka. fetch)"
+		echo "  package     Package a project for deployment"
+		echo "  connect     Connect to an application-server (requires Linux or macOS)"
+		echo "  upgrade     Download the latest versions.json for projects"
 		echo ""
 		echo "More info: https://alan-platform.com/docs/"
 		echo ""

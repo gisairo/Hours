@@ -4,7 +4,7 @@ install: true
 
 script:
   - cd migrations
-  - ../alan fetch dataenv
+  - ../alan bootstrap
   - ../alan build
   - cd -
   - mv ./migrations/from_scratch.migration ./deployments/default/instances/server.migration

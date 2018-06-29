@@ -1,16 +1,29 @@
-external systems
+interfaces:
+	'model' = "model"
 
-systems
-	'server'
-		exposes model as 'hours'
+external-systems:
 
-	'reporter'
-		consumes model as 'hours' from 'server'
+systems:
+	'server' = "datastore"
+		provides:
+			('model' = 'model')
+			custom 'firehose'
+		consumes:
 
-	'client'
-		consumes model as 'hours' from 'server'
-		forwards connection 'report-manage' to internal system 'reporter':'report-manage'
-		forwards connection 'report-download' to internal system 'reporter':'report-download'
+	'reporter' = "reporter"
+		provides:
+			custom 'report-download'
+			custom 'report-manage'
+		consumes:
+			('model' from internal 'server'.'model' = 'model')
 
-providing connections
-	'client' from internal system 'client' custom protocol 'http'
+	'client' = "auto-webclient"
+		provides:
+			custom 'http'
+		consumes:
+			('model' from internal 'server'.'model' = 'model')
+			custom 'report-download' from internal 'reporter'.'report-download'
+			custom 'report-manage'   from internal 'reporter'.'report-manage'
+
+provided-connections:
+	'client' = custom 'client'.'http'

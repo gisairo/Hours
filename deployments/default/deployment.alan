@@ -1,6 +1,6 @@
-external systems
+external-systems
 
-instance data
+instance-data
 	'server'
 		from local migrate
 
@@ -10,14 +10,11 @@ instance data
 	'reporter'
 		from local
 
-system options
+system-options
 	'server'
 		schedule every day every hour
 			at 25
 			at 55
 
-providing connections
-	'client' socket "0.0.0.0" : 7584
-
-enable persistent storage for
-	'server'
+providing-connections
+	'client' custom socket "0.0.0.0" : 7584
