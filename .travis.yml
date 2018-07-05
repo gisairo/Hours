@@ -10,4 +10,4 @@ script:
   - mv ./migrations/from_scratch.migration ./deployments/default/instances/server.migration
   - ./alan bootstrap
   - ./alan build
-  - ./alan package devenv/output/project.definition deployments/default -f minors.json
+  - ./alan package dist/project.pkg deployments/default -f minors.json
