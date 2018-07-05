@@ -5,25 +5,30 @@ external-systems:
 
 systems:
 	'server' = "datastore"
-		provides:
-			('model' = 'model')
-			custom 'firehose'
-		consumes:
+		provides (
+			'model' = 'model'
+			'firehose' = "firehose"
+		)
+		consumes ( )
 
 	'reporter' = "reporter"
-		provides:
-			custom 'report-download'
-			custom 'report-manage'
-		consumes:
-			('model' from internal 'server'.'model' = 'model')
+		provides (
+			'report-download' = "report-download"
+			'report-manage' = "report-manage"
+		)
+		consumes (
+			'model' -> 'server'.'model' = 'model'
+		)
 
 	'client' = "auto-webclient"
-		provides:
-			custom 'http'
-		consumes:
-			('model' from internal 'server'.'model' = 'model')
-			custom 'report-download' from internal 'reporter'.'report-download'
-			custom 'report-manage'   from internal 'reporter'.'report-manage'
+		provides (
+			'http' = custom
+		)
+		consumes (
+			'model' -> 'server'.'model' = 'model'
+			'report-download' -> 'reporter'.'report-download' = "report-download"
+			'report-manage'   -> 'reporter'.'report-manage' = "report-manage"
+		)
 
 provided-connections:
-	'client' = custom 'client'.'http'
+	'client' = 'client'.'http'

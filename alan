@@ -9,7 +9,7 @@ set -e
 # If an "offline" file is present in the project, it will not download anything.
 
 
-VERSION="2018.32"
+VERSION="2018.33"
 
 function find_up {
 	UP_DIR=$(pwd)
@@ -23,42 +23,26 @@ BASEDIR=$(dirname "$0")
 SCRIPTDIR=$(cd "$BASEDIR"; pwd)
 INSTALL_ROOT=$(find_up "versions.json")
 
-function pass_though {
-	if [[ ! -e "$SCRIPTDIR/alan-tools" ]]; then
-		echo "Run ./alan bootstrap first"
-		exit
-	fi
-
-	if [[ ! -e "$INSTALL_ROOT" ]]; then
-		echo "Cannot find project"
-		exit
-	fi
-
-	# ... look in devenv
-	if [[ -e "$INSTALL_ROOT/devenv/platform/project-cli/alan-devenv.sh" ]]; then
-		"$INSTALL_ROOT/devenv/platform/project-cli/alan-devenv.sh" "$@"
-	# ... or in dataenv
-	elif [[ -e "$INSTALL_ROOT/dataenv/platform/project-cli/alan-dataenv.sh" ]]; then
-		"$INSTALL_ROOT/dataenv/platform/project-cli/alan-dataenv.sh" "$@"
-	else
-		echo "Run ./alan bootstrap first"
-	fi
-	exit
-}
-
 function download_self {
 	if [[ -e "$INSTALL_ROOT/offline" ]]; then
 		echo "Cannot download in offline mode"
 		echo "Remove the 'offline' file to re-enable downloads"
 		exit 0
 	fi
-	if [[ -f "$INSTALL_ROOT/versions.json" && -f "$SCRIPTDIR/alan-tools/jq" ]]; then
-		READVER=$("$SCRIPTDIR/alan-tools/jq" -r '.["platform version"]' < "$INSTALL_ROOT/versions.json")
+	if [[ -f "$INSTALL_ROOT/versions.json" && -f "$SCRIPTDIR/.alan/alan-tools/jq" ]]; then
+		READVER=$("$SCRIPTDIR/.alan/alan-tools/jq" -r '.["platform version"]' < "$INSTALL_ROOT/versions.json")
 		if [[ $READVER != "" ]]; then
+			if [[ $READVER != "$VERSION" ]]; then
+				STARTOVER="true"
+			fi
 			VERSION=$READVER
 		fi
 	fi
 	curl -s "https://alan-platform.com/utils/$VERSION/$PLATFORM/utils.tar.gz" | tar xzfC - "$SCRIPTDIR"
+	if [[ $STARTOVER == "true" ]]; then
+		echo "Alan has been upgraded. Please run your command again."
+		exit 1
+	fi
 }
 
 if [[ $(uname) == "Darwin" ]]; then
@@ -69,8 +53,10 @@ else
 	PLATFORM="windows-x64"
 fi
 
-if [[ $# -lt 1 ]]; then
-	pass_though "$@"
+if [[ $2 == "--format" ]]; then
+	format="$2 $3"
+else
+	format=""
 fi
 
 case $1 in
@@ -81,63 +67,85 @@ case $1 in
 
 	--help)
 		echo "Usage:"
-		echo "  alan (bootstrap|package|connect|upgrade)"
+		echo "  alan (bootstrap|build|package|connect|script|upgrade) [options]"
 		echo "  alan --help"
 		echo "  alan --version"
 		echo ""
-		echo "  bootstrap   Download an environment (aka. fetch)"
-		echo "  package     Package a project for deployment"
-		echo "  connect     Connect to an application-server (requires Linux or macOS)"
-		echo "  upgrade     Download the latest versions.json for projects"
+		echo "  f, bootstrap        Download tools for an environment (aka. fetch)"
+		echo "  b, build [-C 'dir'] Build the project, optionaly from a specific directory"
+		echo "  p, package          Package a project for deployment"
+		echo "  c, connect          Connect to an application-server (requires Linux or macOS)"
+		echo "  s, script           List available scripts"
+		echo "  u, upgrade          Download the latest versions.json for projects"
 		echo ""
 		echo "More info: https://alan-platform.com/docs/"
 		echo ""
 
-		pass_though --help
-		"$SCRIPTDIR/alan-tools/package.sh" --help
+		"$SCRIPTDIR/.alan/alan-tools/package.sh" --help
 		;;
 
-	upgrade)
+	u | upgrade)
 		download_self
 		curl -s -L -o versions.json "https://alan-platform.com/versions/versions.json"
 		;;
 
-	package)
+	p | package)
 		download_self
 		shift 1
-		"$SCRIPTDIR/alan-tools/package.sh" "$@"
+		"$SCRIPTDIR/.alan/alan-tools/package.sh" "$@"
 		;;
 
-	bootstrap | fetch)
+	f | bootstrap | fetch)
 		if [[ $2 == "--version" ]]; then
 			VERSION=$3
 			shift 2
 		fi
 		download_self
 
-		if [[ ${PWD##*/} == "migrations" && -f "versions.json" ]]; then
-			# assume dataenv if currect dir is called "migrations"
-			"$SCRIPTDIR/alan-tools/fetch" dataenv
-		elif [[ "$2" == "" ]]; then
-			# allow shorthand for devenv
+		if [[ "$2" == "" ]]; then
+			# allow shorthand for devenv + dataenv
 			pushd "$INSTALL_ROOT" >> /dev/null
-			"$SCRIPTDIR/alan-tools/fetch" devenv
+			"$SCRIPTDIR/.alan/alan-tools/fetch" devenv
+			"$SCRIPTDIR/.alan/alan-tools/fetch" dataenv
 			popd >> /dev/null
 		else
 			shift 1
 			pushd "$INSTALL_ROOT" >> /dev/null
-			"$SCRIPTDIR/alan-tools/fetch" "$@"
+			"$SCRIPTDIR/.alan/alan-tools/fetch" "$@"
 			popd >> /dev/null
 		fi
 		;;
 
-	connect)
+	c | connect)
 		shift 1
-		"$SCRIPTDIR/alan-tools/application-client" "$@"
+		"$SCRIPTDIR/.alan/alan-tools/application-client" "$@"
 		;;
 
+	s | script)
+		find . -regex "\\./.alan/[a-z]*env/system-types/.*\\.sh"
+		;;
 
+	b | build)
+		if [[ $2 == "-C" ]]; then
+			cd "$3"
+		fi
+		if [[ $(find_up "migration.alan") ]]; then
+			cd "$(find_up "migration.alan")/.."
+		fi
+		if [[ ${PWD##*/} == "migrations" ]]; then
+			for d in *; do
+				if [[ -d "$d" ]]; then
+					echo "Building $d"
+					"$INSTALL_ROOT/.alan/dataenv/platform/project-compiler/tools/compiler-project" "$INSTALL_ROOT/.alan/dataenv/system-types/datastore/language-migration" $format --log warning -C "$d" "$INSTALL_ROOT/dist/$d.migration"
+				fi
+			done
+		else
+			pushd "$INSTALL_ROOT" >> /dev/null
+			"$INSTALL_ROOT/.alan/devenv/platform/project-build-environment/tools/buildenvironment-build-system" "$INSTALL_ROOT/.alan/devenv/platform/project-build-configuration/package" $format "$INSTALL_ROOT/dist/project.pkg"
+			popd >> /dev/null
+		fi
+		;;
 	*)
-		pass_though "$@"
+		echo "Unknown command, run with --help for available commands"
 		;;
 esac
