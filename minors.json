@@ -2,7 +2,7 @@
 	"platform version": "2018.35",
 	"system types": {
 		"auto-webclient": {
-			"version": "intrepid.14.0"
+			"version": "intrepid.15.0"
 		},
 		"datastore": {
 			"version": "33.0"
