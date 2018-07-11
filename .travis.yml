@@ -2,6 +2,10 @@ os: osx
 
 install: true
 
+notifications:
+  email:
+    - developers@m-industries.com
+
 script:
   - ./alan bootstrap
   - ./alan build
