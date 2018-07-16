@@ -1,5 +1,3 @@
 {
-  "DEBUG": true,
-  "policy": 15,
-  "poolsize": 0
+  "DEBUG": true
 }
