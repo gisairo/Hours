@@ -31,12 +31,6 @@ root (
 				| 'Yes' = 'Yes' (
 				)
 			)
-			'Reviewer' : stategroup = switch ( ? 'Reviewer' ) (
-				| 'No' = 'No' (
-				)
-				| 'Yes' = 'Yes' (
-				)
-			)
 		)
 	)
 	'Years' : collection = . 'Years' (

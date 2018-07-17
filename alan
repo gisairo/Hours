@@ -9,7 +9,7 @@ set -e
 # If an "offline" file is present in the project, it will not download anything.
 
 
-VERSION="2018.36"
+VERSION="2018.38"
 
 function find_up {
 	UP_DIR=$(pwd)

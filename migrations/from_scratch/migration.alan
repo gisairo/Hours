@@ -8,7 +8,6 @@ root (
 				'Employee' : stategroup = 'Yes' ( )
 				'Manager' : stategroup = 'Yes' ( )
 				'Project Manager' : stategroup = 'Yes' ( )
-				'Reviewer' : stategroup = 'Yes' ( )
 			)
 		)
 	)

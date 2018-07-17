@@ -25,7 +25,7 @@ root #writer 'Manager' #reader 'Employee' {
 				'No' -> { }
 			)
 		}
-		'Contracts': collection @small @dormant if ?'Active'|'No' {
+		'Contracts': collection @small @dormant ?'Active'|'No' {
 			'Time Per Week': natural 'Minutes'
 			'Active': stategroup @default: 'Yes' (
 				'Yes' -> { }
@@ -34,7 +34,7 @@ root #writer 'Manager' #reader 'Employee' {
 		}
 	}
 
-	'Years': collection @dormant if ?'Closed'|'Yes' {
+	'Years': collection @dormant ?'Closed'|'Yes' {
 		'Closed': stategroup @default: 'No' (
 			'Yes' -> { }
 			'No' -> { }
@@ -73,7 +73,7 @@ root #writer 'Manager' #reader 'Employee' {
 			'Total Budget':= integer '€' = sum . 'Sections' # 'Total Budget'
 		}
 
-		'Projects' #writer 'Project Manager': collection @dormant if ?'Active'|'No' {
+		'Projects' #writer 'Project Manager': collection @dormant ?'Active'|'No' {
 			'Active': stategroup @default: 'Yes' (
 				'Yes' -> { }
 				'No' -> { }
@@ -129,7 +129,7 @@ root #writer 'Manager' #reader 'Employee' {
 				'Yes' -> { }
 				'No' -> { }
 			)
-			'Weeks': collection -> %^ . 'Weeks' @dormant if ?'Submitted'|'Yes'  {
+			'Weeks': collection -> %^ . 'Weeks' @dormant ?'Submitted'|'Yes'  {
 				'Days': collection -> >key . 'Days' @small {
 					'Registrations' #writer 'Employee': collection  @guid @small {
 						'Duration': natural 'Minutes' @min: 15 @max: 1440 @description: "At least 15min"
