@@ -20,10 +20,6 @@ root #writer 'Manager' #reader 'Employee' {
 				'Yes' -> { }
 				'No' -> { }
 			)
-			'Reviewer': stategroup @default: 'No' (
-				'Yes' -> { }
-				'No' -> { }
-			)
 			'Employee': stategroup @default: 'Yes' (
 				'Yes' -> { }
 				'No' -> { }
