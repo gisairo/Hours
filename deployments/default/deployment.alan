@@ -2,7 +2,7 @@ external-systems:
 
 instance-data:
 	'server'
-		from local
+		from local migrate
 
 	'client'
 		from local
