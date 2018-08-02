@@ -9,7 +9,7 @@ set -e
 # If an "offline" file is present in the project, it will not download anything.
 
 
-VERSION="2018.38"
+VERSION="2018.39"
 
 function find_up {
 	UP_DIR=$(pwd)
@@ -38,7 +38,7 @@ function download_self {
 			VERSION=$READVER
 		fi
 	fi
-	curl -s "https://alan-platform.com/utils/$VERSION/$PLATFORM/utils.tar.gz" | tar xzfC - "$SCRIPTDIR"
+	curl -s "https://dist.m-industries.com/share/alan/alan-$VERSION-$PLATFORM.tar.gz" | tar xzfC - "$SCRIPTDIR"
 	if [[ $STARTOVER == "true" ]]; then
 		echo "Alan has been upgraded. Please run your command again."
 		exit 1
