@@ -2,7 +2,7 @@
 	"platform version": "2018.39",
 	"system types": {
 		"auto-webclient": {
-			"version": "janeway.0"
+			"version": "janeway.1"
 		},
 		"datastore": {
 			"version": "36"
