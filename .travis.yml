@@ -2,10 +2,6 @@ os: osx
 
 install: true
 
-# before_install:
-#   # - brew update
-#   - brew upgrade python
-
 notifications:
   email:
     - developers@m-industries.com
