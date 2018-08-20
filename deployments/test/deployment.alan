@@ -1,0 +1,26 @@
+external-systems:
+
+instance-data:
+	'server'
+		from remote
+		socket "127.0.0.1" : 49000
+		stack "default"
+		system "server"
+
+	'client'
+		from local
+
+	'reporter'
+		from remote
+		socket "127.0.0.1" : 49000
+		stack "default"
+		system "reporter"
+
+system-options:
+	'server'
+		schedule every day every hour
+			at 25
+			at 55
+
+provided-connections:
+	'client' custom socket "0.0.0.0" : 7584
