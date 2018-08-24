@@ -29,20 +29,23 @@ function download_self {
 		echo "Remove the 'offline' file to re-enable downloads"
 		exit 0
 	fi
-	if [[ -f "$INSTALL_ROOT/versions.json" && -f "$SCRIPTDIR/.alan/alan-tools/jq" ]]; then
-		READVER=$("$SCRIPTDIR/.alan/alan-tools/jq" -r '.["platform version"]' < "$INSTALL_ROOT/versions.json")
-		if [[ $READVER != "" ]]; then
-			if [[ $READVER != "$VERSION" ]]; then
-				STARTOVER="true"
+	function finish {
+		curl -s "https://dist.m-industries.com/share/alan/alan-$VERSION-$PLATFORM.tar.gz" | tar xzfC - "$SCRIPTDIR"
+		if [[ -f "$INSTALL_ROOT/versions.json" && -f "$SCRIPTDIR/.alan/alan-tools/jq" ]]; then
+			READVER=$("$SCRIPTDIR/.alan/alan-tools/jq" -r '.["platform version"]' < "$INSTALL_ROOT/versions.json")
+			if [[ $READVER != "" ]]; then
+				if [[ $READVER != "$VERSION" ]]; then
+					STARTOVER="true"
+				fi
+				VERSION=$READVER
 			fi
-			VERSION=$READVER
 		fi
-	fi
-	curl -s "https://dist.m-industries.com/share/alan/alan-$VERSION-$PLATFORM.tar.gz" | tar xzfC - "$SCRIPTDIR"
-	if [[ $STARTOVER == "true" ]]; then
-		echo "Alan has been upgraded. Please run your command again."
-		exit 1
-	fi
+		if [[ $STARTOVER == "true" ]]; then
+			echo "Alan has been upgraded. Please run your command again."
+			exit 1
+		fi
+	}
+	trap finish EXIT
 }
 
 if [[ $(uname) == "Darwin" ]]; then
@@ -136,7 +139,7 @@ case $1 in
 			for d in *; do
 				if [[ -d "$d" ]]; then
 					echo "Building $d"
-					"$INSTALL_ROOT/.alan/dataenv/platform/project-compiler/tools/compiler-project" "$INSTALL_ROOT/.alan/dataenv/system-types/datastore/language-migration" $format --log warning -C "$d" "$INSTALL_ROOT/dist/$d.migration"
+					"$INSTALL_ROOT/.alan/dataenv/platform/project-compiler/tools/compiler-project" "$INSTALL_ROOT/.alan/dataenv/system-types/datastore/language-migration" $format --log warning --force -C "$d" "$INSTALL_ROOT/dist/$d.migration"
 				fi
 			done
 		else
