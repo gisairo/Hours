@@ -3,6 +3,10 @@ external-systems:
 instance-data:
 	'server'
 		from local migrate
+		// from remote
+		// socket "127.0.0.1" : 12345
+		// stack "hours"
+		// system "server"
 
 	'client'
 		from local
