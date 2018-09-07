@@ -2,16 +2,27 @@ users
 	dynamic :  . 'Users'
 	password : . 'Password'
 
-roles
-	'Manager':         dynamic + 'Roles' ? 'Manager' | 'Yes'
-	'Project Manager': dynamic + 'Roles' ? 'Project Manager' | 'Yes'
-	'Employee':        dynamic + 'Roles' ? 'Employee' | 'Yes'
+// roles
+// 	'Manager':         dynamic + 'Roles' ? 'Manager' | 'Yes'
+// 	'Project Manager': dynamic + 'Roles' ? 'Project Manager' | 'Yes'
+// 	'Employee':        dynamic + 'Roles' ? 'Employee' | 'Yes'
 
-root #writer 'Manager' #reader 'Employee' {
-	'Users': collection {
+interfaces
+
+root {
+
+	#can-read: user
+
+	'Users': collection
+		#can-create: user +'Roles'?'Manager'|'Yes'
+	{
+		#can-update: user +'Roles'?'Manager'|'Yes' || equal ( user , $ )
+
 		'Name': text @identifying
-		'Password' #writer 'Employee': text @validate: ".{8}" @description: "At least 8 characters"
+		'Password': text @validate: ".{8}" @description: "At least 8 characters"
 		'Roles': group {
+			#can-update: user +'Roles'?'Manager'|'Yes'
+
 			'Manager': stategroup @default: 'No' (
 				'Yes' -> { }
 				'No' -> { }
@@ -25,7 +36,11 @@ root #writer 'Manager' #reader 'Employee' {
 				'No' -> { }
 			)
 		}
-		'Contracts': collection @small @dormant ?'Active'|'No' {
+		'Contracts': collection @small @dormant ?'Active'|'No'
+			#can-create: user +'Roles'?'Manager'|'Yes'
+		{
+			#can-update: user +'Roles'?'Manager'|'Yes'
+
 			'Time Per Week': natural 'Minutes'
 			'Active': stategroup @default: 'Yes' (
 				'Yes' -> { }
@@ -34,13 +49,22 @@ root #writer 'Manager' #reader 'Employee' {
 		}
 	}
 
-	'Years': collection @dormant ?'Closed'|'Yes' {
+	'Years': collection
+		@dormant ?'Closed'|'Yes'
+		#can-create: user +'Roles'?'Manager'|'Yes'
+	{
+		#can-update: user +'Roles'?'Manager'|'Yes'
+
 		'Closed': stategroup @default: 'No' (
 			'Yes' -> { }
 			'No' -> { }
 		)
 
-		'Project Groups' #writer 'Project Manager': collection {
+		'Project Groups': collection
+			#can-create: user +'Roles'?'Manager'|'Yes' || user +'Roles'?'Project Manager'|'Yes'
+		{
+			#can-update: user +'Roles'?'Manager'|'Yes' || user +'Roles'?'Project Manager'|'Yes' || equal ( user , $ >'Owner'>key )
+
 			'Owner': text -> forward .^ % 'Users'
 			'Comments': text @multi-line
 			'Sections': collection {
@@ -73,7 +97,7 @@ root #writer 'Manager' #reader 'Employee' {
 			'Total Budget':= integer '€' = sum . 'Sections' # 'Total Budget'
 		}
 
-		'Projects' #writer 'Project Manager': collection @dormant ?'Active'|'No' {
+		'Projects': collection @dormant ?'Active'|'No' {
 			'Active': stategroup @default: 'Yes' (
 				'Yes' -> { }
 				'No' -> { }
@@ -131,7 +155,7 @@ root #writer 'Manager' #reader 'Employee' {
 			)
 			'Weeks': collection -> %^ . 'Weeks' @dormant ?'Submitted'|'Yes'  {
 				'Days': collection -> >key . 'Days'  @ascending: ( >key ) #'Date' @small {
-					'Registrations' #writer 'Employee': collection  @guid @small {
+					'Registrations': collection  @guid @small {
 						'Duration': natural 'Minutes' @min: 15 @max: 1440 @description: "At least 15min"
 						'Activity': stategroup @default: 'Worked On Project' (
 							'Worked On Project' -> {
@@ -142,15 +166,15 @@ root #writer 'Manager' #reader 'Employee' {
 							'Furlough' -> {
 								'Furlough Taken':= natural 'Minutes' = ?^ # 'Duration'
 							}
-							'TBD' -> { workfor 'Employee' }
+							'TBD' -> { /*workfor 'Employee'*/ }
 						)
 						'Description': text @multi-line
 					}
 					'Total Duration' := integer 'Minutes' = sum . 'Registrations' # 'Duration'
 					'Furlough Taken':= integer 'Minutes' = sum . 'Registrations' ? 'Activity' | 'Furlough' # 'Furlough Taken'
 				}
-				'Submitted' #writer 'Employee': stategroup @default: 'No' (
-					'No' -> { workfor 'Employee' }
+				'Submitted': stategroup @default: 'No' (
+					'No' -> { /*workfor 'Employee'*/ }
 					'Yes' -> {
 						'Fixed Contract': stategroup @default: 'Yes' (
 							'No' -> { }
@@ -162,8 +186,8 @@ root #writer 'Manager' #reader 'Employee' {
 						'Approved': stategroup  @default: 'No' (
 							'No' -> { }
 							'Yes' -> {
-								'Timestamp' #writer 'Project Manager': integer 'Time' @default: now
-								'Approver'  #writer 'Project Manager': text -> ?^ ?^ %^ %^ .^ . 'Users' @metadata
+								'Timestamp': integer 'Time' @default: now
+								'Approver': text -> ?^ ?^ %^ %^ .^ . 'Users' @metadata
 							}
 						)
 					}
@@ -187,7 +211,7 @@ root #writer 'Manager' #reader 'Employee' {
 					}
 				)
 			}
-			'Furlough Budget' #writer 'Project Manager': integer 'Minutes'
+			'Furlough Budget': integer 'Minutes'
 				@description: "Available time off according to your contract."
 			'Furlough Taken' := integer 'Minutes' = sum % 'Weeks' # 'Furlough Taken'
 				@description: "Time off already used."

@@ -3,6 +3,4 @@ application name: "Hours"
 anonymous login: disabled
 csv actions: enabled
 report limit: 1000000
-system administrator role: 'Employee'
-power user role: 'Employee'
 announcement: "" [ ]

@@ -1,14 +1,17 @@
 {
-	"platform version": "2018.39",
+	"platform version": "permissions.1",
 	"system types": {
 		"auto-webclient": {
-			"version": "janeway.3.0"
+			"version": "permissions.1.0"
 		},
 		"datastore": {
-			"version": "36.0"
+			"version": "permissions.1.0"
+		},
+		"sql-mirror": {
+			"version": "permissions.1.0"
 		},
 		"reporter": {
-			"version": "30.0"
+			"version": "permissions.1.0"
 		}
 	}
 }
