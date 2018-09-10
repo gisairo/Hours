@@ -56,8 +56,8 @@ root {
 		#can-update: user +'Roles'?'Manager'|'Yes'
 
 		'Closed': stategroup @default: 'No' (
-			'Yes' -> { }
-			'No' -> { }
+			'Yes' -> #can-create: user +'Roles'?'Manager'|'Yes' { }
+			'No' -> #can-create: user +'Roles'?'Manager'|'Yes' { }
 		)
 
 		'Project Groups': collection
