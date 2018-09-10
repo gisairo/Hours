@@ -1,11 +1,6 @@
 users
-	dynamic :  . 'Users'
-	password : . 'Password'
-
-// roles
-// 	'Manager':         dynamic + 'Roles' ? 'Manager' | 'Yes'
-// 	'Project Manager': dynamic + 'Roles' ? 'Project Manager' | 'Yes'
-// 	'Employee':        dynamic + 'Roles' ? 'Employee' | 'Yes'
+	dynamic :  .'Users'
+	password : .'Password'
 
 interfaces
 
@@ -61,16 +56,19 @@ root {
 		)
 
 		'Project Groups': collection
-			#can-create: user +'Roles'?'Manager'|'Yes' || user +'Roles'?'Project Manager'|'Yes'
+			#can-create: user +'Roles'?'Manager'|'Yes'
+				|| user +'Roles'?'Project Manager'|'Yes'
 		{
-			#can-update: user +'Roles'?'Manager'|'Yes' || user +'Roles'?'Project Manager'|'Yes' || equal ( user , $ >'Owner'>key )
+			#can-update: user +'Roles'?'Manager'|'Yes'
+				|| user +'Roles'?'Project Manager'|'Yes'
+				|| equal ( user , $ >'Owner'>key )
 
-			'Owner': text -> forward .^ % 'Users'
+			'Owner': text -> forward .^ %'Users'
 			'Comments': text @multi-line
 			'Sections': collection {
 				'Projects': reference-set
-					-> . 'Years' . 'Projects' ? 'Billable' | 'Yes'
-					=> inverse > 'Section'
+					-> .'Years'.'Projects'?'Billable'|'Yes'
+					=> inverse >'Section'
 				'Rate': integer '€/hour'
 				'Declaration Method': stategroup @default: 'Declaration' (
 					'Fixed Price' -> {
@@ -79,22 +77,22 @@ root {
 					'Declaration' -> {
 						'Budget': integer 'Hours'
 						'Budget Amount':= integer '€' = product (
-							# 'Budget' as 'Hours',
-							?^ # 'Rate'
+							#'Budget' as 'Hours',
+							?^ #'Rate'
 						)
 					}
 				)
 				'Declaration Budget':= integer '€' = switch ( ? 'Declaration Method' ) (
-					|'Fixed Price' = $ # 'Final Amount'
-					|'Declaration' = $ # 'Budget Amount'
+					|'Fixed Price' = $ #'Final Amount'
+					|'Declaration' = $ #'Budget Amount'
 				)
 				'Expenses Budget': integer '€'
 				'Total Budget':= integer '€' = sumlist (
-					# 'Declaration Budget',
-					# 'Expenses Budget'
+					#'Declaration Budget',
+					#'Expenses Budget'
 				)
 			}
-			'Total Budget':= integer '€' = sum . 'Sections' # 'Total Budget'
+			'Total Budget':= integer '€' = sum .'Sections'#'Total Budget'
 		}
 
 		'Projects': collection @dormant ?'Active'|'No' {
@@ -107,22 +105,22 @@ root {
 				'No' -> { }
 			)
 			'Registrations On Project': reference-set
-				-> . 'Years' % 'Users' % 'Weeks' % 'Days' . 'Registrations' ? 'Activity' | 'Worked On Project'
+				-> .'Years'%'Users'%'Weeks'%'Days'.'Registrations'?'Activity'|'Worked On Project'
 				=> inverse > 'Project'
-			'Registered Time':= integer 'Minutes' = sum < 'Registrations On Project' ?^ # 'Duration'
-			'Project Group': text -> .^ . 'Project Groups'
+			'Registered Time':= integer 'Minutes' = sum < 'Registrations On Project' ?^ #'Duration'
+			'Project Group': text -> .^ .'Project Groups'
 			'Billable': stategroup (
 				'No' -> { }
 				'Yes' -> {
-					'Section': text -> ?^ > 'Project Group' . 'Sections' -< 'Projects' @identifying
+					'Section': text -> ?^ >'Project Group'.'Sections' -< 'Projects' @identifying
 					'Budget': natural 'Minutes'
 					'Declarations': collection {
 						'Minutes': natural 'Minutes'
 					}
-					'Declared':= integer 'Minutes' = sum . 'Declarations' # 'Minutes'
+					'Declared':= integer 'Minutes' = sum .'Declarations' #'Minutes'
 					'Remaining Budget':= integer 'Minutes' = sumlist (
-						# 'Budget',
-						- # 'Declared'
+						#'Budget',
+						- #'Declared'
 					)
 				}
 			)
@@ -148,30 +146,30 @@ root {
 				)
 			}
 		}
-		'Users': collection -> .^ . 'Users' {
+		'Users': collection -> .^ .'Users' {
 			'Subsidized': stategroup @description: "WBSO" (
 				'Yes' -> { }
 				'No' -> { }
 			)
-			'Weeks': collection -> %^ . 'Weeks' @dormant ?'Submitted'|'Yes'  {
-				'Days': collection -> >key . 'Days'  @ascending: ( >key ) #'Date' @small {
-					'Registrations': collection  @guid @small {
+			'Weeks': collection -> %^ .'Weeks' @dormant ?'Submitted'|'Yes'  {
+				'Days': collection -> >key .'Days' @ascending: ( >key ) #'Date' @small {
+					'Registrations': collection @guid @small {
 						'Duration': natural 'Minutes' @min: 15 @max: 1440 @description: "At least 15min"
 						'Activity': stategroup @default: 'Worked On Project' (
 							'Worked On Project' -> {
-								'Project': text -> ?^ .^ %^ %^ %^ . 'Projects' -< 'Registrations On Project'
+								'Project': text -> ?^ .^ %^ %^ %^ .'Projects' -< 'Registrations On Project'
 							}
 							'Holiday' -> { }
 							'Sick Leave' -> { }
 							'Furlough' -> {
-								'Furlough Taken':= natural 'Minutes' = ?^ # 'Duration'
+								'Furlough Taken':= natural 'Minutes' = ?^ #'Duration'
 							}
 							'TBD' -> { /*workfor 'Employee'*/ }
 						)
 						'Description': text @multi-line
 					}
-					'Total Duration' := integer 'Minutes' = sum . 'Registrations' # 'Duration'
-					'Furlough Taken':= integer 'Minutes' = sum . 'Registrations' ? 'Activity' | 'Furlough' # 'Furlough Taken'
+					'Total Duration' := integer 'Minutes' = sum .'Registrations'#'Duration'
+					'Furlough Taken':= integer 'Minutes' = sum .'Registrations'?'Activity'|'Furlough'#'Furlough Taken'
 				}
 				'Submitted': stategroup @default: 'No' (
 					'No' -> { /*workfor 'Employee'*/ }
@@ -179,52 +177,51 @@ root {
 						'Fixed Contract': stategroup @default: 'Yes' (
 							'No' -> { }
 							'Yes' -> {
-								'Contract': text -> ?^ ?^ %^ >key . 'Contracts'
-								'Contractual Time Per Week':= natural 'Minutes' = > 'Contract' # 'Time Per Week'
+								'Contract': text -> ?^ ?^ %^ >key .'Contracts'
+								'Contractual Time Per Week':= natural 'Minutes' = >'Contract'#'Time Per Week'
 							}
 						)
 						'Approved': stategroup  @default: 'No' (
 							'No' -> { }
 							'Yes' -> {
 								'Timestamp': integer 'Time' @default: now
-								'Approver': text -> ?^ ?^ %^ %^ .^ . 'Users' @metadata
+								'Approver': text -> ?^ ?^ %^ %^ .^ .'Users' @metadata
 							}
 						)
 					}
 				)
-				'Total Duration' := integer 'Minutes' = sum % 'Days' # 'Total Duration'
-				'Furlough Taken':= integer 'Minutes' = sum % 'Days' # 'Furlough Taken'
+				'Total Duration' := integer 'Minutes' = sum % 'Days' #'Total Duration'
+				'Furlough Taken':= integer 'Minutes' = sum % 'Days' #'Furlough Taken'
 				'Overtime Known':= stategroup = switch ( ? 'Submitted' ) (
-					| 'No' = 'No'
-					| 'Yes' = switch ( $ ? 'Fixed Contract' ) (
-						| 'No' = 'No'
-						| 'Yes' = 'Yes' ( 'Contract Known' => $ )
+					|'No' = 'No'
+					|'Yes' = switch ( $ ?'Fixed Contract' ) (
+						|'No' = 'No'
+						|'Yes' = 'Yes' ( 'Contract Known' => $ )
 					)
-				)
-				(
+				) (
 					'No' -> { }
-					'Yes' ( 'Contract Known' : . 'Years' % 'Users' % 'Weeks' ? 'Submitted'|'Yes' ? 'Fixed Contract'|'Yes' ) -> {
+					'Yes' ( 'Contract Known' : .'Years'%'Users'%'Weeks'?'Submitted'|'Yes'?'Fixed Contract'|'Yes' ) -> {
 						'Deviation':= integer 'Minutes' = sumlist (
-							?^ # 'Total Duration',
-							- & 'Contract Known' # 'Contractual Time Per Week'
+							?^ #'Total Duration',
+							- & 'Contract Known' #'Contractual Time Per Week'
 						)
 					}
 				)
 			}
 			'Furlough Budget': integer 'Minutes'
 				@description: "Available time off according to your contract."
-			'Furlough Taken' := integer 'Minutes' = sum % 'Weeks' # 'Furlough Taken'
+			'Furlough Taken' := integer 'Minutes' = sum %'Weeks'#'Furlough Taken'
 				@description: "Time off already used."
 			'Furlough Remaining':= integer 'Minutes' = sumlist (
-				# 'Furlough Budget',
-				- # 'Furlough Taken'
+				#'Furlough Budget',
+				- #'Furlough Taken'
 			)   @description: "Difference between available and used time off."
-			'Overtime':= integer 'Minutes' = sum % 'Weeks' ? 'Overtime Known'|'Yes' # 'Deviation'
+			'Overtime':= integer 'Minutes' = sum %'Weeks'?'Overtime Known'|'Yes'#'Deviation'
 				@description: "Total of all deviations from your contractual time."
 			'Furlough Budget Remaining':= integer 'Minutes' = sumlist (
-				# 'Furlough Budget',
-				# 'Overtime',
-				- # 'Furlough Taken'
+				#'Furlough Budget',
+				#'Overtime',
+				- #'Furlough Taken'
 			)   @description: "Time off remaining for this year."
 		}
 	}
