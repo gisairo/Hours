@@ -12,7 +12,7 @@ script:
   - ./alan bootstrap
   - ./alan build
   - ./alan build -C migrations
-  - mv dist/from_scratch.migration deployments/default/instances/server.migration
+  - mv dist/from_zero.migration deployments/default/instances/server.migration
   - ./alan package dist/project.pkg deployments/default -f minors.json
   - ./alan package dist/project.pkg deployments/test -f minors.json
   - python3 test.py
