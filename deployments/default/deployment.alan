@@ -2,11 +2,11 @@ external-systems:
 
 instance-data:
 	'server'
-		// from local migrate
-		from remote
-		socket "127.0.0.1" : 12345
-		stack "Hours"
-		system "server"
+		from local migrate
+		// from remote
+		// socket "127.0.0.1" : 12345
+		// stack "Hours"
+		// system "server"
 
 	'client'
 		from local
