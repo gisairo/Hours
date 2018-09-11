@@ -223,24 +223,22 @@ root {
 				'Total Duration':= integer 'Minutes' = sum % 'Days' #'Total Duration'
 				'Furlough Taken':= integer 'Minutes' = sum % 'Days' #'Furlough Taken'
 
-				'Overtime Known':= stategroup = switch ( ?'Fixed Contract' ) (
-					|'No' = 'No'
-					|'Yes' = 'Yes' ( 'Contract Known' => $ )
+				'Overtime Known':= stategroup = switch ( ?'Status' ) (
+					|'Open' = 'No'
+					|'Submitted' = switch ( $^ ?'Fixed Contract' ) (
+						|'No' = 'No'
+						|'Yes' = 'Yes' ( 'Contract Known' => $ )
+					)
+					|'Approved' = switch ( $^ ?'Fixed Contract' ) (
+						|'No' = 'No'
+						|'Yes' = 'Yes' ( 'Contract Known' => $ )
+					)
 				) (
 					'No' -> { }
 					'Yes' ( 'Contract Known': .'Years'%'Users'%'Weeks'?'Fixed Contract'|'Yes' ) -> {
-						'Overtime Set':= stategroup = switch ( ?^ ?'Status' ) (
-							|'Open' = 'No'
-							|'Submitted' = 'Yes'
-							|'Approved' = 'Yes'
-						) (
-							'No' -> { }
-							'Yes' -> {
-								'Deviation':= integer 'Minutes' = sumlist (
-									?^ ?^ #'Total Duration',
-									- ?^ & 'Contract Known' #'Contractual Time Per Week'
-								)
-							}
+						'Deviation':= integer 'Minutes' = sumlist (
+							?^ #'Total Duration',
+							- & 'Contract Known' #'Contractual Time Per Week'
 						)
 					}
 				)
@@ -257,7 +255,7 @@ root {
 				- #'Furlough Taken'
 			)   @description: "Difference between available and used time off."
 
-			'Overtime':= integer 'Minutes' = sum %'Weeks'?'Overtime Known'|'Yes'?'Overtime Set'|'Yes'#'Deviation'
+			'Overtime':= integer 'Minutes' = sum %'Weeks'?'Overtime Known'|'Yes'#'Deviation'
 				@description: "Total of all deviations from your contractual time."
 
 			'Furlough Budget Remaining':= integer 'Minutes' = sumlist (
