@@ -196,26 +196,11 @@ root {
 					'Furlough Taken':= integer 'Minutes' = sum .'Registrations'?'Activity'|'Furlough'#'Furlough Taken'
 				}
 
-				'Fixed Contract': stategroup @default: 'Yes' (
+				'Fixed Contract': stategroup @default: 'No' (
 					'No' -> { }
 					'Yes' -> {
 						'Contract': text -> ?^ %^ >key .'Contracts'
 						'Contractual Time Per Week':= natural 'Minutes' = >'Contract'#'Time Per Week'
-					}
-				)
-
-				'Total Duration':= integer 'Minutes' = sum % 'Days' #'Total Duration'
-				'Furlough Taken':= integer 'Minutes' = sum % 'Days' #'Furlough Taken'
-				'Overtime Known':= stategroup = switch ( ?'Fixed Contract' ) (
-					|'No' = 'No'
-					|'Yes' = 'Yes' ( 'Contract Known' => $ )
-				) (
-					'No' -> { }
-					'Yes' ( 'Contract Known': .'Years'%'Users'%'Weeks'?'Fixed Contract'|'Yes' ) -> {
-						'Deviation':= integer 'Minutes' = sumlist (
-							?^ #'Total Duration',
-							- & 'Contract Known' #'Contractual Time Per Week'
-						)
 					}
 				)
 
@@ -234,18 +219,47 @@ root {
 						'Approver': text -> ?^ %^ %^ .^ .'Users' @metadata
 					}
 				)
+
+				'Total Duration':= integer 'Minutes' = sum % 'Days' #'Total Duration'
+				'Furlough Taken':= integer 'Minutes' = sum % 'Days' #'Furlough Taken'
+
+				'Overtime Known':= stategroup = switch ( ?'Fixed Contract' ) (
+					|'No' = 'No'
+					|'Yes' = 'Yes' ( 'Contract Known' => $ )
+				) (
+					'No' -> { }
+					'Yes' ( 'Contract Known': .'Years'%'Users'%'Weeks'?'Fixed Contract'|'Yes' ) -> {
+						'Overtime Set':= stategroup = switch ( ?^ ?'Status' ) (
+							|'Open' = 'No'
+							|'Submitted' = 'Yes'
+							|'Approved' = 'Yes'
+						) (
+							'No' -> { }
+							'Yes' -> {
+								'Deviation':= integer 'Minutes' = sumlist (
+									?^ ?^ #'Total Duration',
+									- ?^ & 'Contract Known' #'Contractual Time Per Week'
+								)
+							}
+						)
+					}
+				)
 			}
 
 			'Furlough Budget': integer 'Minutes'
 				@description: "Available time off according to your contract."
+
 			'Furlough Taken' := integer 'Minutes' = sum %'Weeks'#'Furlough Taken'
 				@description: "Time off already used."
+
 			'Furlough Remaining':= integer 'Minutes' = sumlist (
 				#'Furlough Budget',
 				- #'Furlough Taken'
 			)   @description: "Difference between available and used time off."
-			'Overtime':= integer 'Minutes' = sum %'Weeks'?'Overtime Known'|'Yes'#'Deviation'
+
+			'Overtime':= integer 'Minutes' = sum %'Weeks'?'Overtime Known'|'Yes'?'Overtime Set'|'Yes'#'Deviation'
 				@description: "Total of all deviations from your contractual time."
+
 			'Furlough Budget Remaining':= integer 'Minutes' = sumlist (
 				#'Furlough Budget',
 				#'Overtime',
