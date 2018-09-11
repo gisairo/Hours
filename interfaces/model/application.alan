@@ -1,23 +1,22 @@
 users
 	dynamic :  .'Users'
-	password : .'Password'
+	password : +'Personalia'.'Password'
 
 interfaces
 
 root {
-
 	#can-read: user
+	#can-update: user +'Roles'?'Manager'|'Yes'
 
-	'Users': collection
-		#can-create: user +'Roles'?'Manager'|'Yes'
-	{
-		#can-update: user +'Roles'?'Manager'|'Yes' || equal ( user , $ )
+	'Users': collection {
+		'Personalia': group {
+			#can-update: user +'Roles'?'Manager'|'Yes' || equal ( user , $ ^ )
 
-		'Name': text @identifying
-		'Password': text @validate: ".{8}" @description: "At least 8 characters"
+			'Name': text @identifying
+			'Password': text @validate: ".{8}" @description: "At least 8 characters"
+		}
+
 		'Roles': group {
-			#can-update: user +'Roles'?'Manager'|'Yes'
-
 			'Manager': stategroup @default: 'No' (
 				'Yes' -> { }
 				'No' -> { }
@@ -31,10 +30,9 @@ root {
 				'No' -> { }
 			)
 		}
-		'Contracts': collection @small @dormant ?'Active'|'No'
-			#can-create: user +'Roles'?'Manager'|'Yes'
-		{
-			#can-update: user +'Roles'?'Manager'|'Yes'
+
+		'Contracts': collection @small @dormant ?'Active'|'No' {
+			#can-read: user +'Roles'?'Manager'|'Yes' || equal ( user , $ ^ )
 
 			'Time Per Week': natural 'Minutes'
 			'Active': stategroup @default: 'Yes' (
@@ -44,16 +42,32 @@ root {
 		}
 	}
 
-	'Years': collection
-		@dormant ?'Closed'|'Yes'
-		#can-create: user +'Roles'?'Manager'|'Yes'
-	{
-		#can-update: user +'Roles'?'Manager'|'Yes'
-
+	'Years': collection @dormant ?'Closed'|'Yes' {
 		'Closed': stategroup @default: 'No' (
-			'Yes' -> #can-create: user +'Roles'?'Manager'|'Yes' { }
-			'No' -> #can-create: user +'Roles'?'Manager'|'Yes' { }
+			'Yes' -> { }
+			'No' -> { }
 		)
+
+		'Weeks': collection {
+			'Days': collection {
+				'Date': integer 'Date' @identifying
+				'Is a Holiday': stategroup (
+					'No' -> { }
+					'Yes' -> {
+						'Holiday': text @identifying
+					}
+				)
+				'Week Day': stategroup (
+					'Monday' -> { }
+					'Tuesday' -> { }
+					'Wednesday' -> { }
+					'Thursday' -> { }
+					'Friday' -> { }
+					'Saturday' -> { }
+					'Sunday' -> { }
+				)
+			}
+		}
 
 		'Project Groups': collection
 			#can-create: user +'Roles'?'Manager'|'Yes'
@@ -95,7 +109,16 @@ root {
 			'Total Budget':= integer '€' = sum .'Sections'#'Total Budget'
 		}
 
-		'Projects': collection @dormant ?'Active'|'No' {
+		'Projects': collection
+			@dormant ?'Active'|'No'
+			#can-create: user +'Roles'?'Manager'|'Yes'
+				|| user +'Roles'?'Project Manager'|'Yes'
+		{
+			#can-update: user +'Roles'?'Manager'|'Yes'
+				|| user +'Roles'?'Project Manager'|'Yes'
+				|| equal ( user , $ >'Project Group'>'Owner'>key )
+
+			'Project Group': text -> .^ .'Project Groups'
 			'Active': stategroup @default: 'Yes' (
 				'Yes' -> { }
 				'No' -> { }
@@ -108,7 +131,6 @@ root {
 				-> .'Years'%'Users'%'Weeks'%'Days'.'Registrations'?'Activity'|'Worked On Project'
 				=> inverse > 'Project'
 			'Registered Time':= integer 'Minutes' = sum < 'Registrations On Project' ?^ #'Duration'
-			'Project Group': text -> .^ .'Project Groups'
 			'Billable': stategroup (
 				'No' -> { }
 				'Yes' -> {
@@ -126,34 +148,36 @@ root {
 			)
 		}
 
-		'Weeks': collection {
-			'Days': collection {
-				'Date': integer 'Date' @identifying
-				'Is a Holiday': stategroup (
-					'No' -> { }
-					'Yes' -> {
-						'Holiday': text @identifying
-					}
-				)
-				'Week Day': stategroup (
-					'Monday' -> { }
-					'Tuesday' -> { }
-					'Wednesday' -> { }
-					'Thursday' -> { }
-					'Friday' -> { }
-					'Saturday' -> { }
-					'Sunday' -> { }
-				)
-			}
-		}
 		'Users': collection -> .^ .'Users' {
 			'Subsidized': stategroup @description: "WBSO" (
 				'Yes' -> { }
 				'No' -> { }
 			)
-			'Weeks': collection -> %^ .'Weeks' @dormant ?'Submitted'|'Yes'  {
-				'Days': collection -> >key .'Days' @ascending: ( >key ) #'Date' @small {
-					'Registrations': collection @guid @small {
+			'Weeks': collection -> %^ .'Weeks' @dormant ?'Status'|'Approved'
+				#can-create: user +'Roles'?'Manager'|'Yes'
+				#can-delete: user +'Roles'?'Manager'|'Yes'
+			{
+				#can-update: equal ( user , $ ?'Status'|'Open'>'Owner' )
+					|| equal ( user , $ ?'Status'|'Submitted'>'Owner' )
+					|| equal ( user , $ ?'Status'|'Approved'>'Approver' )
+					|| user +'Roles'?'Manager'|'Yes'
+
+				'Days': collection -> >key .'Days'
+					@ascending: ( >key ) #'Date'
+					@small
+					#can-create: user +'Roles'?'Manager'|'Yes'
+					#can-delete: user +'Roles'?'Manager'|'Yes'
+				{
+					'Registrations': collection
+						@guid @small
+						#can-create: equal ( user , $ ^ ?'Status'|'Open'>'Owner' )
+							|| equal ( user , $ ^ ?'Status'|'Submitted'>'Owner' )
+							|| equal ( user , $ ^ ?'Status'|'Approved'>'Approver' )
+					{
+						#can-update: equal ( user , $ ^ ^ ?'Status'|'Open'>'Owner' )
+							|| equal ( user , $ ^ ^ ?'Status'|'Submitted'>'Owner' )
+							|| equal ( user , $ ^ ^ ?'Status'|'Approved'>'Approver' )
+
 						'Duration': natural 'Minutes' @min: 15 @max: 1440 @description: "At least 15min"
 						'Activity': stategroup @default: 'Worked On Project' (
 							'Worked On Project' -> {
@@ -171,43 +195,47 @@ root {
 					'Total Duration' := integer 'Minutes' = sum .'Registrations'#'Duration'
 					'Furlough Taken':= integer 'Minutes' = sum .'Registrations'?'Activity'|'Furlough'#'Furlough Taken'
 				}
-				'Submitted': stategroup @default: 'No' (
-					'No' -> { /*workfor 'Employee'*/ }
+
+				'Fixed Contract': stategroup @default: 'Yes' (
+					'No' -> { }
 					'Yes' -> {
-						'Fixed Contract': stategroup @default: 'Yes' (
-							'No' -> { }
-							'Yes' -> {
-								'Contract': text -> ?^ ?^ %^ >key .'Contracts'
-								'Contractual Time Per Week':= natural 'Minutes' = >'Contract'#'Time Per Week'
-							}
-						)
-						'Approved': stategroup  @default: 'No' (
-							'No' -> { }
-							'Yes' -> {
-								'Timestamp': integer 'Time' @default: now
-								'Approver': text -> ?^ ?^ %^ %^ .^ .'Users' @metadata
-							}
-						)
+						'Contract': text -> ?^ %^ >key .'Contracts'
+						'Contractual Time Per Week':= natural 'Minutes' = >'Contract'#'Time Per Week'
 					}
 				)
-				'Total Duration' := integer 'Minutes' = sum % 'Days' #'Total Duration'
+
+				'Total Duration':= integer 'Minutes' = sum % 'Days' #'Total Duration'
 				'Furlough Taken':= integer 'Minutes' = sum % 'Days' #'Furlough Taken'
-				'Overtime Known':= stategroup = switch ( ? 'Submitted' ) (
+				'Overtime Known':= stategroup = switch ( ?'Fixed Contract' ) (
 					|'No' = 'No'
-					|'Yes' = switch ( $ ?'Fixed Contract' ) (
-						|'No' = 'No'
-						|'Yes' = 'Yes' ( 'Contract Known' => $ )
-					)
+					|'Yes' = 'Yes' ( 'Contract Known' => $ )
 				) (
 					'No' -> { }
-					'Yes' ( 'Contract Known' : .'Years'%'Users'%'Weeks'?'Submitted'|'Yes'?'Fixed Contract'|'Yes' ) -> {
+					'Yes' ( 'Contract Known': .'Years'%'Users'%'Weeks'?'Fixed Contract'|'Yes' ) -> {
 						'Deviation':= integer 'Minutes' = sumlist (
 							?^ #'Total Duration',
 							- & 'Contract Known' #'Contractual Time Per Week'
 						)
 					}
 				)
+
+				'Status': stategroup @default: 'Open' (
+					'Open' -> {
+						/*workfor 'Employee'*/
+						'Owner':= text => ( ?^ %^ %^ .^ .'Users' ) ?^ %^ >key
+					}
+					'Submitted' -> {
+						/*workfor 'Project Manager'*/
+						'Owner':= text => ( ?^ %^ %^ .^ .'Users' ) ?^ %^ >key
+					}
+					'Approved' -> #can-create: user +'Roles'?'Project Manager'|'Yes' {
+						// #can-update: user +'Roles'?'Project Manager'|'Yes'
+						'Timestamp': integer 'Time' @default: now
+						'Approver': text -> ?^ %^ %^ .^ .'Users' @metadata
+					}
+				)
 			}
+
 			'Furlough Budget': integer 'Minutes'
 				@description: "Available time off according to your contract."
 			'Furlough Taken' := integer 'Minutes' = sum %'Weeks'#'Furlough Taken'
