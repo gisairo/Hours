@@ -1,17 +1,17 @@
 {
-	"platform version": "permissions.1",
+	"platform version": "permissions.2",
 	"system types": {
 		"auto-webclient": {
-			"version": "permissions.1.0"
+			"version": "permissions.3.0"
 		},
 		"datastore": {
-			"version": "permissions.1.0"
+			"version": "permissions.5.0"
 		},
 		"sql-mirror": {
 			"version": "permissions.1.0"
 		},
 		"reporter": {
-			"version": "permissions.1.0"
+			"version": "permissions.5.0"
 		}
 	}
 }

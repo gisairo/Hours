@@ -5,12 +5,12 @@ users
 interfaces
 
 root {
-	#can-read: user
-	#can-update: user +'Roles'?'Manager'|'Yes'
+	can-read: user
+	can-update: user +'Roles'?'Manager'|'Yes'
 
 	'Users': collection {
 		'Personalia': group {
-			#can-update: user +'Roles'?'Manager'|'Yes' || equal ( user , $ ^ )
+			can-update: user +'Roles'?'Manager'|'Yes' || equal ( user , $ ^ )
 
 			'Name': text @identifying
 			'Password': text @validate: ".{8}" @description: "At least 8 characters"
@@ -32,7 +32,7 @@ root {
 		}
 
 		'Contracts': collection @small @dormant ?'Active'|'No' {
-			#can-read: user +'Roles'?'Manager'|'Yes' || equal ( user , $ ^ )
+			can-read: user +'Roles'?'Manager'|'Yes' || equal ( user , $ ^ )
 
 			'Time Per Week': natural 'Minutes'
 			'Active': stategroup @default: 'Yes' (
@@ -70,10 +70,10 @@ root {
 		}
 
 		'Project Groups': collection
-			#can-create: user +'Roles'?'Manager'|'Yes'
+			can-create: user +'Roles'?'Manager'|'Yes'
 				|| user +'Roles'?'Project Manager'|'Yes'
 		{
-			#can-update: user +'Roles'?'Manager'|'Yes'
+			can-update: user +'Roles'?'Manager'|'Yes'
 				|| user +'Roles'?'Project Manager'|'Yes'
 				|| equal ( user , $ >'Owner'>key )
 
@@ -110,11 +110,11 @@ root {
 		}
 
 		'Projects': collection
-			@dormant ?'Active'|'No'
-			#can-create: user +'Roles'?'Manager'|'Yes'
+			can-create: user +'Roles'?'Manager'|'Yes'
 				|| user +'Roles'?'Project Manager'|'Yes'
+			@dormant ?'Active'|'No'
 		{
-			#can-update: user +'Roles'?'Manager'|'Yes'
+			can-update: user +'Roles'?'Manager'|'Yes'
 				|| user +'Roles'?'Project Manager'|'Yes'
 				|| equal ( user , $ >'Project Group'>'Owner'>key )
 
@@ -153,28 +153,29 @@ root {
 				'Yes' -> { }
 				'No' -> { }
 			)
-			'Weeks': collection -> %^ .'Weeks' @dormant ?'Status'|'Approved'
-				#can-create: user +'Roles'?'Manager'|'Yes'
-				#can-delete: user +'Roles'?'Manager'|'Yes'
+			'Weeks': collection -> %^ .'Weeks'
+				can-create: user +'Roles'?'Manager'|'Yes'
+				can-delete: user +'Roles'?'Manager'|'Yes'
+				@dormant ?'Status'|'Approved'
 			{
-				#can-update: equal ( user , $ ?'Status'|'Open'>'Owner' )
+				can-update: equal ( user , $ ?'Status'|'Open'>'Owner' )
 					|| equal ( user , $ ?'Status'|'Submitted'>'Owner' )
 					|| equal ( user , $ ?'Status'|'Approved'>'Approver' )
 					|| user +'Roles'?'Manager'|'Yes'
 
 				'Days': collection -> >key .'Days'
+					can-create: user +'Roles'?'Manager'|'Yes'
+					can-delete: user +'Roles'?'Manager'|'Yes'
 					@ascending: ( >key ) #'Date'
 					@small
-					#can-create: user +'Roles'?'Manager'|'Yes'
-					#can-delete: user +'Roles'?'Manager'|'Yes'
 				{
 					'Registrations': collection
-						@guid @small
-						#can-create: equal ( user , $ ^ ?'Status'|'Open'>'Owner' )
+						can-create: equal ( user , $ ^ ?'Status'|'Open'>'Owner' )
 							|| equal ( user , $ ^ ?'Status'|'Submitted'>'Owner' )
 							|| equal ( user , $ ^ ?'Status'|'Approved'>'Approver' )
+						@guid @small
 					{
-						#can-update: equal ( user , $ ^ ^ ?'Status'|'Open'>'Owner' )
+						can-update: equal ( user , $ ^ ^ ?'Status'|'Open'>'Owner' )
 							|| equal ( user , $ ^ ^ ?'Status'|'Submitted'>'Owner' )
 							|| equal ( user , $ ^ ^ ?'Status'|'Approved'>'Approver' )
 
@@ -188,7 +189,9 @@ root {
 							'Furlough' -> {
 								'Furlough Taken':= natural 'Minutes' = ?^ #'Duration'
 							}
-							'TBD' -> { /*workfor 'Employee'*/ }
+							'TBD' -> {
+								has-todo: equal ( user , $ ^ ^ ^ ^ >key )
+							}
 						)
 						'Description': text @multi-line
 					}
@@ -213,8 +216,8 @@ root {
 						/*workfor 'Project Manager'*/
 						'Owner':= text => ( ?^ %^ %^ .^ .'Users' ) ?^ %^ >key
 					}
-					'Approved' -> #can-create: user +'Roles'?'Project Manager'|'Yes' {
-						// #can-update: user +'Roles'?'Project Manager'|'Yes'
+					'Approved' -> can-create: user +'Roles'?'Project Manager'|'Yes' {
+						// can-update: user +'Roles'?'Project Manager'|'Yes'
 						'Timestamp': integer 'Time' @default: now
 						'Approver': text -> ?^ %^ %^ .^ .'Users' @metadata
 					}

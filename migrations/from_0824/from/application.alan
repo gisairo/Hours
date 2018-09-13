@@ -5,7 +5,7 @@ users
 interfaces
 
 root {
-	#can-read: user
+	can-read: user
 
 	'Users': collection {
 		'Name': text @identifying
