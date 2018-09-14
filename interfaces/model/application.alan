@@ -209,15 +209,15 @@ root {
 
 				'Status': stategroup @default: 'Open' (
 					'Open' -> {
-						/*workfor 'Employee'*/
+						has-todo: equal ( user , $ ^ ^ >key )
 						'Owner':= text => ( ?^ %^ %^ .^ .'Users' ) ?^ %^ >key
 					}
 					'Submitted' -> {
-						/*workfor 'Project Manager'*/
+						has-todo: user +'Roles'?'Project Manager'|'Yes'
 						'Owner':= text => ( ?^ %^ %^ .^ .'Users' ) ?^ %^ >key
 					}
 					'Approved' -> can-create: user +'Roles'?'Project Manager'|'Yes' {
-						// can-update: user +'Roles'?'Project Manager'|'Yes'
+						can-update: equal ( user , $ > 'Approver' )
 						'Timestamp': integer 'Time' @default: now
 						'Approver': text -> ?^ %^ %^ .^ .'Users' @metadata
 					}
