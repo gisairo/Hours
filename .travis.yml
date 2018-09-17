@@ -13,6 +13,6 @@ script:
   - ./alan build
   - ./alan build -C migrations
   - mv dist/from_zero.migration deployments/default/instances/server.migration
-  - ./alan package dist/project.pkg deployments/default -f minors.json
-  - ./alan package dist/project.pkg deployments/test -f minors.json
+  - ./alan package dist/project.pkg deployments/default
+  - ./alan package dist/project.pkg deployments/test
   - python3 test.py
