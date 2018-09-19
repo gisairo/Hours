@@ -218,7 +218,7 @@ root {
 					}
 					'Approved' -> can-create: user +'Roles'?'Project Manager'|'Yes' {
 						can-update: equal ( user , $ > 'Approver' )
-						'Timestamp': integer 'Time' @default: now
+						'Timestamp': integer 'Time' = creation-time
 						'Approver': text -> ?^ %^ %^ .^ .'Users' @metadata
 					}
 				)
