@@ -92,7 +92,7 @@ case $1 in
 
 	u | upgrade)
 		download_self
-		curl -s -L -o versions.json "https://alan-platform.com/versions/versions.json"
+		curl -s -L -o versions.json "https://dist.m-industries.com/share/versions/versions.json"
 		;;
 
 	p | package)
