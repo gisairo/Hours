@@ -1,14 +1,14 @@
 {
-	"platform version": "2018.40",
+	"platform version": "2018.41",
 	"system types": {
 		"auto-webclient": {
-			"version": "janeway.5"
+			"version": "janeway.6"
 		},
 		"datastore": {
-			"version": "37"
+			"version": "38"
 		},
 		"reporter": {
-			"version": "31"
+			"version": "32"
 		}
 	}
 }
