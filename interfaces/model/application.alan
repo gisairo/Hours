@@ -248,6 +248,11 @@ root {
 			}
 
 			'Furlough Budget': integer 'Minutes'
+				// Furlough: A leave of absence or vacation.
+				// We use a single budget for all kinds of time off that aren't sick leave,
+				// so additional furlough can be granted on top of the yearly contractual
+				// budget. Overtime that isn't compensated in the same week is added
+				// as well so that it can be compensated later via furlough as well.
 				@description: "Available time off according to your contract."
 
 			'Furlough Taken' := integer 'Minutes' = sum %'Weeks'#'Furlough Taken'
